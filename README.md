@@ -1,15 +1,24 @@
-# DSGE Model Conversion: Julia to Python
+# Python DSGE Estimation Framework with OccBin Support
 
 ## Executive Summary
 
-This project aims to convert the New York Federal Reserve DSGE model from Julia to Python, with support for occasionally binding constraints (OccBin). This document summarizes the key resources and findings from initial research.
+This project aims to develop a consistent estimation framework for Dynamic Stochastic General Equilibrium (DSGE) models in Python, with particular emphasis on models featuring occasionally binding constraints (OccBin). The New York Federal Reserve DSGE model serves as the primary application and validation case for this estimation infrastructure. This document summarizes the key resources and findings from initial research.
 
 ## Project Objectives
 
-1. Convert the NYFed DSGE.jl model from Julia to Python
-2. Integrate with Ed Herbst's Python DSGE estimation framework
-3. Implement OccBin (occasionally binding constraints) solver functionality
-4. Create a consistent methodology for estimating DSGE models with occasionally binding constraints
+### Primary Goal
+Develop a consistent, reusable estimation strategy that can be applied across different DSGE model specifications, enabling researchers to:
+- Define models using a standardized specification format
+- Estimate models using a unified Bayesian estimation engine
+- Incorporate occasionally binding constraints (OccBin) seamlessly
+- Maintain separation between model definition and estimation methodology
+
+### Specific Deliverables
+1. **Estimation Framework**: Implement a modular estimation infrastructure based on Sequential Monte Carlo (SMC) or equivalent Bayesian methods
+2. **Model Specification Layer**: Create a consistent interface for defining DSGE model equations, parameters, and calibrations
+3. **OccBin Integration**: Integrate occasionally binding constraints solver functionality into the estimation workflow
+4. **NYFed Model Application**: Convert and estimate the New York Federal Reserve DSGE model as a demonstration of the framework's capabilities
+5. **Documentation**: Provide clear examples of how to specify and estimate different DSGE models using the framework
 
 ## Key Resources Identified
 
@@ -102,6 +111,50 @@ This project aims to convert the New York Federal Reserve DSGE model from Julia 
 - MATLAB implementations using time iteration with linear interpolation
 - User-friendly suite of functions for OccBin models
 
+## Project Philosophy: Framework-Centric vs. Model-Centric Approach
+
+This project adopts a **framework-centric** approach rather than a **model-centric** approach. Understanding this distinction is crucial for architectural decisions.
+
+### Framework-Centric Approach (This Project)
+**Goal**: Build reusable estimation infrastructure applicable to multiple DSGE models
+
+**Characteristics**:
+- Separates model specification from estimation methodology
+- Estimation engine is model-agnostic
+- Researchers can plug in different model specifications
+- Consistent estimation strategy across models
+- NYFed model serves as validation case
+
+**Analogy**: Building a statistical software package (like Stan or PyMC) that can estimate many different models, rather than implementing one specific model.
+
+**Benefits**:
+- Enables comparative analysis across models
+- Reduces duplication of estimation code
+- Facilitates methodological improvements (update estimation engine once, benefit all models)
+- Supports reproducibility through consistent methodology
+
+### Model-Centric Approach (Not This Project)
+**Goal**: Port a specific model (NYFed DSGE) from Julia to Python
+
+**Characteristics**:
+- Focus on getting one model working in Python
+- Estimation code may be tightly coupled to model specification
+- Optimization for single use case
+- Faster initial development
+
+**When Appropriate**:
+- Production deployment of specific model for forecasting
+- Replicating published results for one model
+- Quick prototyping or proof-of-concept
+
+### Implications for Development
+
+The framework-centric approach requires:
+1. **More upfront design work**: Define clear interfaces between modules
+2. **Greater initial development effort**: Build generalized rather than specialized code
+3. **Broader validation requirements**: Test with multiple models, not just one
+4. **Better long-term value**: Infrastructure can support future research needs
+
 ## Critical Findings
 
 ### 1. OccBin Python Implementation Already Exists ✅
@@ -110,17 +163,28 @@ Contrary to the initial assumption ("I don't think the Ocbin solver for python h
 
 ### 2. Two Viable Development Paths
 
-**Path A: Use pydsge as Foundation** (Recommended)
-- Leverage existing OccBin implementation
-- Focus on converting NYFed model specification to pydsge format
-- Extend pydsge if needed for NYFed-specific features
-- Faster time to working prototype
+The choice of development path has significant implications for achieving the goal of a consistent estimation framework across multiple DSGE models.
 
-**Path B: Extend Ed Herbst's dsge Package**
-- Build OccBin solver from scratch
-- Port MATLAB reference implementations
-- More control but significantly more development work
-- Higher risk due to minimal package maintenance
+**Path A: Build on pydsge**
+- Leverage existing OccBin implementation (already functional)
+- Faster time to working prototype for NYFed model
+- Trade-off: Less control over estimation methodology
+- Challenge: Framework is tightly integrated; harder to separate model specification from estimation
+- Best suited for: Single-model estimation projects
+
+**Path B: Extend Ed Herbst's dsge Package** (Aligned with Framework Goals)
+- Modular architecture: `dsge` package for model specification, `smc` package for estimation
+- Clear separation of concerns enables consistent estimation across different models
+- Requires implementing OccBin solver (significant development effort)
+- Can leverage MATLAB reference implementations (Guerrieri/Iacoviello, Richter/Throckmorton)
+- Higher development cost but greater flexibility for multi-model framework
+- Best suited for: Building reusable estimation infrastructure
+
+**Path C: Hybrid Approach**
+- Use pydsge's OccBin implementation as reference
+- Integrate with Ed Herbst's modular framework (dsge + smc)
+- Extract and adapt OccBin solver to work with dsge package specifications
+- Balances development effort with framework goals
 
 ### 3. Reference Implementation Sources
 
@@ -131,25 +195,77 @@ For understanding OccBin methodology:
 
 ## Recommended Next Steps
 
-1. **Explore pydsge Capabilities**
-   - Review documentation and examples
-   - Test OccBin functionality with toy models
-   - Assess compatibility with NYFed model structure
+### Phase 1: Framework Architecture Decision
 
-2. **Analyze DSGE.jl Structure**
-   - Identify core model equations and calibration
-   - Map Julia-specific features to Python equivalents
-   - Document estimation procedures
+1. **Evaluate Ed Herbst's dsge + smc Framework**
+   - Review `dsge` package architecture and model specification format
+   - Analyze `smc` package estimation capabilities
+   - Assess extensibility for OccBin integration
+   - Document current limitations and gaps
+
+2. **Analyze pydsge OccBin Implementation**
+   - Study OccBin solver algorithms and implementation details
+   - Identify key components that could be extracted/adapted
+   - Evaluate compatibility with modular estimation framework
 
 3. **Architecture Decision**
-   - Determine if pydsge can be used as-is or requires extension
-   - Evaluate whether to fork pydsge or use as dependency
-   - Plan integration strategy
+   - Select development path (A, B, or C) based on framework requirements
+   - Define module boundaries: model specification, solver, estimation
+   - Plan integration strategy for OccBin functionality
 
-4. **Implementation Planning**
-   - Create detailed specification mapping (Julia → Python)
-   - Identify testing/validation strategy
-   - Establish development milestones
+### Phase 2: Estimation Framework Development
+
+4. **Design Model Specification Interface**
+   - Define standard format for DSGE model equations
+   - Establish parameter and calibration structures
+   - Create validation and testing protocols
+   - Design for extensibility (multiple model types)
+
+5. **Implement/Extend Estimation Engine**
+   - Integrate or enhance SMC-based Bayesian estimation
+   - Ensure estimation code is model-agnostic
+   - Implement convergence diagnostics
+   - Add support for parallel computation
+
+6. **Integrate OccBin Solver**
+   - Implement or adapt piecewise linear perturbation solver
+   - Integrate regime-switching logic into estimation workflow
+   - Validate against MATLAB reference implementations
+   - Optimize for computational performance
+
+### Phase 3: NYFed Model Application
+
+7. **Convert NYFed Model Specification**
+   - Analyze DSGE.jl model structure (equations, parameters, observables)
+   - Map Julia-specific features to Python equivalents
+   - Implement model in framework's specification format
+   - Validate model solution against Julia implementation
+
+8. **Estimate NYFed Model**
+   - Prepare data inputs (FRED or equivalent sources)
+   - Configure estimation parameters (priors, SMC settings)
+   - Execute estimation using the framework
+   - Compare results with published DSGE.jl estimates
+
+9. **Validation and Testing**
+   - Establish testing strategy (unit tests, integration tests)
+   - Validate estimation results against known benchmarks
+   - Document performance metrics and computational requirements
+   - Create example notebooks demonstrating framework usage
+
+### Phase 4: Documentation and Generalization
+
+10. **Framework Documentation**
+    - Write user guide for model specification
+    - Document estimation methodology and configuration
+    - Provide examples with multiple model types (not just NYFed)
+    - Create developer documentation for extending framework
+
+11. **Demonstrate Generalizability**
+    - Implement at least one additional model (e.g., Smets-Wouters)
+    - Show consistent estimation methodology across models
+    - Document differences in model-specific requirements
+    - Validate framework's reusability claims
 
 ## Technical Considerations
 
@@ -190,5 +306,6 @@ For understanding OccBin methodology:
 
 ---
 
-**Last Updated**: 2025-11-07
-**Status**: Initial Research Phase
+**Last Updated**: 2025-11-09
+**Status**: Requirements Definition Phase
+**Approach**: Framework-Centric (Consistent Estimation Methodology)
