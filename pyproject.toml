@@ -26,3 +26,32 @@ build-backend = "hatchling.build"
 dev = [
     "pytest>=9.0.0",
 ]
+
+[tool.pytest.ini_options]
+# Pytest configuration
+minversion = "9.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Markers for categorizing tests
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests requiring external resources",
+    "unit: marks tests as unit tests",
+]
+
+# Show extra test summary info
+addopts = [
+    "-ra",  # Show all test outcomes (except passed)
+    "--strict-markers",  # Raise error on unknown markers
+    "--tb=short",  # Shorter traceback format
+    "-v",  # Verbose output
+]
+
+# Ignore warnings from dependencies
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
