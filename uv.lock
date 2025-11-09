@@ -563,6 +563,11 @@ dependencies = [
     { name = "sympy" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "jupyter", specifier = ">=1.1.1" },
@@ -574,6 +579,9 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.16.3" },
     { name = "sympy", specifier = ">=1.14.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.0" }]
 
 [[package]]
 name = "executing"
