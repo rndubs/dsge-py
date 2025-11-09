@@ -14,6 +14,7 @@ from .models import DSGEModel, ModelSpecification, Parameter, ParameterSet, Prio
 from .solvers import solve_linear_model, LinearSolution
 from .filters import KalmanFilter, kalman_filter, kalman_smoother
 from .estimation import estimate_dsge, SMCSampler, log_likelihood_linear
+from .config import Settings, get_settings, get_fred_api_key
 
 __all__ = [
     'DSGEModel',
@@ -29,4 +30,7 @@ __all__ = [
     'estimate_dsge',
     'SMCSampler',
     'log_likelihood_linear',
+    'Settings',
+    'get_settings',
+    'get_fred_api_key',
 ]
