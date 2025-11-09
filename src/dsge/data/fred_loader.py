@@ -47,13 +47,14 @@ def download_fred_series(
 
     # Initialize FRED API
     if api_key is None:
-        # Try to get from environment variable
-        import os
-        api_key = os.environ.get('FRED_API_KEY')
+        # Try to get from settings (which loads from .env or environment variable)
+        from dsge.config import get_fred_api_key
+        api_key = get_fred_api_key()
         if api_key is None:
             warnings.warn(
-                "No FRED API key provided. Set FRED_API_KEY environment variable "
-                "or pass api_key parameter. You can get a free API key at "
+                "No FRED API key provided. Set FRED_API_KEY in .env file or "
+                "environment variable, or pass api_key parameter. "
+                "You can get a free API key at "
                 "https://fred.stlouisfed.org/docs/api/api_key.html"
             )
             # Return empty series if no API key
