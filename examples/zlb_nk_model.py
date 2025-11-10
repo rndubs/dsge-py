@@ -1,5 +1,5 @@
 """
-Simple New Keynesian Model with Zero Lower Bound
+Simple New Keynesian Model with Zero Lower Bound.
 
 This example demonstrates OccBin with a minimal NK model:
 - Taylor rule with ZLB constraint
@@ -7,10 +7,10 @@ This example demonstrates OccBin with a minimal NK model:
 - Two regimes: normal (ZLB slack) and ZLB binding
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
-from dsge import (DSGEModel, ModelSpecification, Parameter, Prior,
-                  solve_linear_model)
+import numpy as np
+
+from dsge import DSGEModel, ModelSpecification, Parameter, solve_linear_model
 from dsge.solvers.occbin import OccBinSolver, create_zlb_constraint
 
 
@@ -26,7 +26,7 @@ class SimpleNKModel(DSGEModel):
     where x = output gap, π = inflation, i = nominal interest rate
     """
 
-    def __init__(self, zlb_binding: bool = False):
+    def __init__(self, zlb_binding: bool = False) -> None:
         """
         Initialize NK model.
 
@@ -40,82 +40,75 @@ class SimpleNKModel(DSGEModel):
             n_controls=0,  # All variables are states in simple version
             n_shocks=3,  # demand shock, supply shock, monetary shock
             n_observables=3,  # observe all variables
-            state_names=['x', 'pi', 'i'],
+            state_names=["x", "pi", "i"],
             control_names=[],
-            shock_names=['eps_d', 'eps_s', 'eps_m'],
-            observable_names=['x_obs', 'pi_obs', 'i_obs']
+            shock_names=["eps_d", "eps_s", "eps_m"],
+            observable_names=["x_obs", "pi_obs", "i_obs"],
         )
         self.zlb_binding = zlb_binding
         super().__init__(spec)
 
-    def _setup_parameters(self):
+    def _setup_parameters(self) -> None:
         """Define model parameters."""
         # Structural parameters
-        self.parameters.add(Parameter(
-            name='sigma',
-            value=1.0,
-            description='Risk aversion / intertemporal elasticity',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma",
+                value=1.0,
+                description="Risk aversion / intertemporal elasticity",
+                fixed=True,
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='beta',
-            value=0.99,
-            description='Discount factor',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(name="beta", value=0.99, description="Discount factor", fixed=True)
+        )
 
-        self.parameters.add(Parameter(
-            name='kappa',
-            value=0.1,
-            description='Slope of Phillips curve',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(name="kappa", value=0.1, description="Slope of Phillips curve", fixed=True)
+        )
 
-        self.parameters.add(Parameter(
-            name='phi_pi',
-            value=1.5 if not self.zlb_binding else 0.0,  # No response at ZLB
-            description='Taylor rule inflation response',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(
+                name="phi_pi",
+                value=1.5 if not self.zlb_binding else 0.0,  # No response at ZLB
+                description="Taylor rule inflation response",
+                fixed=True,
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='phi_x',
-            value=0.5 if not self.zlb_binding else 0.0,  # No response at ZLB
-            description='Taylor rule output response',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(
+                name="phi_x",
+                value=0.5 if not self.zlb_binding else 0.0,  # No response at ZLB
+                description="Taylor rule output response",
+                fixed=True,
+            )
+        )
 
         # Shock persistence (simplified - assume iid)
-        for shock_name in ['rho_d', 'rho_s', 'rho_m']:
-            self.parameters.add(Parameter(
-                name=shock_name,
-                value=0.0,  # IID shocks
-                description=f'Persistence of {shock_name}',
-                fixed=True
-            ))
+        for shock_name in ["rho_d", "rho_s", "rho_m"]:
+            self.parameters.add(
+                Parameter(
+                    name=shock_name,
+                    value=0.0,  # IID shocks
+                    description=f"Persistence of {shock_name}",
+                    fixed=True,
+                )
+            )
 
         # Shock standard deviations
-        self.parameters.add(Parameter(
-            name='sigma_d',
-            value=0.01,
-            description='Demand shock std',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(name="sigma_d", value=0.01, description="Demand shock std", fixed=True)
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_s',
-            value=0.01,
-            description='Supply shock std',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(name="sigma_s", value=0.01, description="Supply shock std", fixed=True)
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_m',
-            value=0.01,
-            description='Monetary shock std',
-            fixed=True
-        ))
+        self.parameters.add(
+            Parameter(name="sigma_m", value=0.01, description="Monetary shock std", fixed=True)
+        )
 
     def system_matrices(self, params=None):
         """
@@ -129,11 +122,11 @@ class SimpleNKModel(DSGEModel):
         if params is not None:
             self.parameters.set_values(params)
 
-        σ = self.parameters['sigma']
-        β = self.parameters['beta']
-        κ = self.parameters['kappa']
-        φ_π = self.parameters['phi_pi']
-        φ_x = self.parameters['phi_x']
+        σ = self.parameters["sigma"]
+        β = self.parameters["beta"]
+        κ = self.parameters["kappa"]
+        φ_π = self.parameters["phi_pi"]
+        φ_x = self.parameters["phi_x"]
 
         n_total = 3  # x, π, i
 
@@ -175,12 +168,7 @@ class SimpleNKModel(DSGEModel):
             Γ0[2, 0] = -φ_x  # -φ_x*x_t
             Ψ[2, 2] = 1  # ε_m_t
 
-        return {
-            'Gamma0': Γ0,
-            'Gamma1': Γ1,
-            'Psi': Ψ,
-            'Pi': Π
-        }
+        return {"Gamma0": Γ0, "Gamma1": Γ1, "Psi": Ψ, "Pi": Π}
 
     def measurement_equation(self, params=None):
         """Observe all variables."""
@@ -193,61 +181,47 @@ class SimpleNKModel(DSGEModel):
         if params is not None:
             self.parameters.set_values(params)
 
-        σ_d = self.parameters['sigma_d']
-        σ_s = self.parameters['sigma_s']
-        σ_m = self.parameters['sigma_m']
+        σ_d = self.parameters["sigma_d"]
+        σ_s = self.parameters["sigma_s"]
+        σ_m = self.parameters["sigma_m"]
 
         return np.diag([σ_d**2, σ_s**2, σ_m**2])
 
 
-def main():
+def main() -> None:
     """Run ZLB New Keynesian model example."""
-    print("=" * 60)
-    print("New Keynesian Model with Zero Lower Bound")
-    print("=" * 60)
-
     # Create both regimes
-    print("\nCreating models for both regimes...")
 
     # Regime M1: Normal times (ZLB slack)
     model_M1 = SimpleNKModel(zlb_binding=False)
-    print("  M1 (Normal): Taylor rule active")
 
     # Regime M2: ZLB binding
     model_M2 = SimpleNKModel(zlb_binding=True)
-    print("  M2 (ZLB): Interest rate fixed at zero")
 
     # Solve both models
-    print("\nSolving both regimes...")
 
     system_M1 = model_M1.system_matrices()
-    solution_M1, info_M1 = solve_linear_model(
-        system_M1['Gamma0'],
-        system_M1['Gamma1'],
-        system_M1['Psi'],
-        system_M1['Pi'],
-        model_M1.spec.n_states
+    solution_M1, _info_M1 = solve_linear_model(
+        system_M1["Gamma0"],
+        system_M1["Gamma1"],
+        system_M1["Psi"],
+        system_M1["Pi"],
+        model_M1.spec.n_states,
     )
 
     system_M2 = model_M2.system_matrices()
-    solution_M2, info_M2 = solve_linear_model(
-        system_M2['Gamma0'],
-        system_M2['Gamma1'],
-        system_M2['Psi'],
-        system_M2['Pi'],
-        model_M2.spec.n_states
+    solution_M2, _info_M2 = solve_linear_model(
+        system_M2["Gamma0"],
+        system_M2["Gamma1"],
+        system_M2["Psi"],
+        system_M2["Pi"],
+        model_M2.spec.n_states,
     )
 
-    print(f"  M1 solution: {info_M1['condition']}")
-    print(f"  M2 solution: {info_M2['condition']}")
 
     if not (solution_M1.is_stable and solution_M2.is_stable):
-        print("\n✗ One or both solutions are not stable")
-        print("  M1 eigenvalues:", info_M1['eigenvalues'])
-        print("  M2 eigenvalues:", info_M2['eigenvalues'])
         return
 
-    print("✓ Both regimes solved successfully")
 
     # Create ZLB constraint (interest rate is index 2)
     zlb_constraint = create_zlb_constraint(variable_index=2, bound=0.0)
@@ -256,7 +230,6 @@ def main():
     occbin_solver = OccBinSolver(solution_M1, solution_M2, zlb_constraint)
 
     # Simulate with a large negative demand shock
-    print("\nSimulating with large negative demand shock...")
     T = 50
     initial_state = np.zeros(3)  # Start at steady state
 
@@ -266,43 +239,36 @@ def main():
     # Solve OccBin model
     occbin_solution = occbin_solver.solve(initial_state, shocks, T)
 
-    print(f"\n  Converged: {occbin_solution.converged}")
-    print(f"  Iterations: {occbin_solution.n_iterations}")
 
     # Count ZLB periods
-    zlb_periods = np.sum(occbin_solution.regime_sequence == 1)
-    print(f"  Periods at ZLB: {zlb_periods}/{T}")
+    np.sum(occbin_solution.regime_sequence == 1)
 
     # Plot results
-    fig, axes = plt.subplots(4, 1, figsize=(10, 10))
+    _fig, axes = plt.subplots(4, 1, figsize=(10, 10))
 
-    var_names = ['Output Gap', 'Inflation', 'Interest Rate']
+    var_names = ["Output Gap", "Inflation", "Interest Rate"]
     for i in range(3):
-        axes[i].plot(occbin_solution.states[:, i], 'b-', linewidth=2)
+        axes[i].plot(occbin_solution.states[:, i], "b-", linewidth=2)
         axes[i].set_ylabel(var_names[i])
         axes[i].grid(True, alpha=0.3)
-        axes[i].axhline(y=0, color='k', linestyle='--', alpha=0.5)
+        axes[i].axhline(y=0, color="k", linestyle="--", alpha=0.5)
 
         # Shade ZLB periods
         for t in range(T):
             if occbin_solution.regime_sequence[t] == 1:
-                axes[i].axvspan(t-0.5, t+0.5, alpha=0.2, color='red')
+                axes[i].axvspan(t - 0.5, t + 0.5, alpha=0.2, color="red")
 
     # Plot regime
-    axes[3].plot(occbin_solution.regime_sequence, 'r-', linewidth=2, drawstyle='steps-post')
-    axes[3].set_ylabel('Regime (0=Normal, 1=ZLB)')
-    axes[3].set_xlabel('Time')
+    axes[3].plot(occbin_solution.regime_sequence, "r-", linewidth=2, drawstyle="steps-post")
+    axes[3].set_ylabel("Regime (0=Normal, 1=ZLB)")
+    axes[3].set_xlabel("Time")
     axes[3].grid(True, alpha=0.3)
     axes[3].set_ylim([-0.1, 1.1])
 
     plt.tight_layout()
-    plt.savefig('examples/zlb_simulation.png', dpi=150)
-    print("\n✓ Plot saved to examples/zlb_simulation.png")
-
-    print("\n" + "=" * 60)
-    print("Example completed successfully!")
-    print("=" * 60)
+    plt.savefig("examples/zlb_simulation.png", dpi=150)
 
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

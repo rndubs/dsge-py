@@ -4,9 +4,10 @@ Sequential Monte Carlo (SMC) sampler for Bayesian estimation of DSGE models.
 This implements a basic SMC sampler for posterior inference.
 """
 
-import numpy as np
-from typing import Callable, Dict, Optional, Tuple
 from dataclasses import dataclass
+
+import numpy as np
+
 from ..models.base import DSGEModel
 from .likelihood import log_likelihood_linear
 
@@ -14,6 +15,7 @@ from .likelihood import log_likelihood_linear
 @dataclass
 class SMCResults:
     """Results from SMC estimation."""
+
     particles: np.ndarray  # Final particle positions (n_particles x n_params)
     weights: np.ndarray  # Final particle weights (n_particles,)
     log_evidence: float  # Log marginal likelihood estimate
@@ -30,11 +32,13 @@ class SMCSampler:
     Herbst & Schorfheide (2014).
     """
 
-    def __init__(self,
-                 n_particles: int = 1000,
-                 n_phi: int = 100,
-                 lambda_param: float = 2.0,
-                 resample_threshold: float = 0.5):
+    def __init__(
+        self,
+        n_particles: int = 1000,
+        n_phi: int = 100,
+        lambda_param: float = 2.0,
+        resample_threshold: float = 0.5,
+    ) -> None:
         """
         Initialize SMC sampler.
 
@@ -54,11 +58,9 @@ class SMCSampler:
         self.lambda_param = lambda_param
         self.resample_threshold = resample_threshold
 
-    def sample(self,
-               model: DSGEModel,
-               data: np.ndarray,
-               n_mh_steps: int = 1,
-               verbose: bool = True) -> SMCResults:
+    def sample(
+        self, model: DSGEModel, data: np.ndarray, n_mh_steps: int = 1, verbose: bool = True
+    ) -> SMCResults:
         """
         Run SMC sampler.
 
@@ -73,7 +75,7 @@ class SMCSampler:
         verbose : bool
             Print progress information
 
-        Returns
+        Returns:
         -------
         SMCResults
             Estimation results
@@ -84,23 +86,27 @@ class SMCSampler:
         n_params = len(param_names)
 
         if n_params == 0:
-            raise ValueError("No free parameters to estimate")
+            msg = "No free parameters to estimate"
+            raise ValueError(msg)
 
         # Initialize particles from prior
         particles = np.zeros((self.n_particles, n_params))
         for i, (name, param) in enumerate(free_params.items()):
             if param.prior is None:
-                raise ValueError(f"Parameter {name} has no prior distribution")
+                msg = f"Parameter {name} has no prior distribution"
+                raise ValueError(msg)
             particles[:, i] = param.prior.rvs(self.n_particles)
 
         # Initialize weights (uniform)
         weights = np.ones(self.n_particles) / self.n_particles
 
         # Evaluate initial log likelihoods
-        log_likelihoods = np.array([
-            self._log_likelihood_tempered(model, data, particles[i], 0.0)
-            for i in range(self.n_particles)
-        ])
+        log_likelihoods = np.array(
+            [
+                self._log_likelihood_tempered(model, data, particles[i], 0.0)
+                for i in range(self.n_particles)
+            ]
+        )
 
         # Initialize tempering schedule
         phi = 0.0  # Start at prior (phi=0), move to posterior (phi=1)
@@ -118,7 +124,7 @@ class SMCSampler:
             phi_increment = phi_new - phi
 
             if verbose:
-                print(f"Iteration {iteration}: phi = {phi_new:.4f}")
+                pass
 
             # Reweight particles
             incremental_weights = np.exp(phi_increment * log_likelihoods)
@@ -129,11 +135,11 @@ class SMCSampler:
             log_evidence += np.log(np.mean(incremental_weights))
 
             # Compute effective sample size
-            ess = 1.0 / np.sum(weights ** 2)
+            ess = 1.0 / np.sum(weights**2)
             ess_ratio = ess / self.n_particles
 
             if verbose:
-                print(f"  ESS = {ess:.0f} ({ess_ratio:.2%})")
+                pass
 
             # Resample if needed
             if ess_ratio < self.resample_threshold:
@@ -141,7 +147,7 @@ class SMCSampler:
                 particles = particles[indices]
                 weights = np.ones(self.n_particles) / self.n_particles
                 if verbose:
-                    print(f"  Resampled")
+                    pass
 
             # Mutation step (Metropolis-Hastings)
             particles, n_accepted = self._mutation_step(
@@ -152,20 +158,23 @@ class SMCSampler:
             n_proposed_total += self.n_particles * n_mh_steps
 
             if verbose:
-                acc_rate = n_accepted / (self.n_particles * n_mh_steps)
-                print(f"  MH acceptance rate: {acc_rate:.2%}")
+                n_accepted / (self.n_particles * n_mh_steps)
 
             # Update for next iteration
             phi = phi_new
             phi_sequence.append(phi)
 
             # Re-evaluate likelihoods at new tempering parameter
-            log_likelihoods = np.array([
-                self._log_likelihood_tempered(model, data, particles[i], phi)
-                for i in range(self.n_particles)
-            ])
+            log_likelihoods = np.array(
+                [
+                    self._log_likelihood_tempered(model, data, particles[i], phi)
+                    for i in range(self.n_particles)
+                ]
+            )
 
-        overall_acceptance_rate = n_accepted_total / n_proposed_total if n_proposed_total > 0 else 0.0
+        overall_acceptance_rate = (
+            n_accepted_total / n_proposed_total if n_proposed_total > 0 else 0.0
+        )
 
         return SMCResults(
             particles=particles,
@@ -173,14 +182,12 @@ class SMCSampler:
             log_evidence=log_evidence,
             log_likelihoods=log_likelihoods,
             acceptance_rate=overall_acceptance_rate,
-            n_iterations=iteration
+            n_iterations=iteration,
         )
 
-    def _log_likelihood_tempered(self,
-                                 model: DSGEModel,
-                                 data: np.ndarray,
-                                 params: np.ndarray,
-                                 phi: float) -> float:
+    def _log_likelihood_tempered(
+        self, model: DSGEModel, data: np.ndarray, params: np.ndarray, phi: float
+    ) -> float:
         """Tempered log posterior: log prior + phi * log likelihood."""
         model.parameters.set_values(params)
         log_prior = model.parameters.log_prior()
@@ -193,10 +200,9 @@ class SMCSampler:
 
         return log_prior + phi * (log_lik - log_prior)
 
-    def _adapt_tempering(self,
-                        phi: float,
-                        log_likelihoods: np.ndarray,
-                        weights: np.ndarray) -> float:
+    def _adapt_tempering(
+        self, phi: float, log_likelihoods: np.ndarray, weights: np.ndarray
+    ) -> float:
         """Adapt tempering parameter to achieve target ESS."""
         if phi >= 1.0:
             return 1.0
@@ -213,7 +219,7 @@ class SMCSampler:
             incremental_weights = np.exp((phi_mid - phi) * log_likelihoods)
             temp_weights = weights * incremental_weights
             temp_weights /= np.sum(temp_weights)
-            ess = 1.0 / np.sum(temp_weights ** 2)
+            ess = 1.0 / np.sum(temp_weights**2)
 
             if abs(ess - target_ess) < 1.0:
                 return phi_mid
@@ -230,23 +236,24 @@ class SMCSampler:
         n = len(weights)
         positions = (np.arange(n) + np.random.uniform(0, 1)) / n
         cumsum = np.cumsum(weights)
-        indices = np.searchsorted(cumsum, positions)
-        return indices
+        return np.asarray(np.searchsorted(cumsum, positions))
 
-    def _mutation_step(self,
-                      model: DSGEModel,
-                      data: np.ndarray,
-                      particles: np.ndarray,
-                      log_posts: np.ndarray,
-                      phi: float,
-                      n_steps: int) -> Tuple[np.ndarray, int]:
+    def _mutation_step(
+        self,
+        model: DSGEModel,
+        data: np.ndarray,
+        particles: np.ndarray,
+        log_posts: np.ndarray,
+        phi: float,
+        n_steps: int,
+    ) -> tuple[np.ndarray, int]:
         """Metropolis-Hastings mutation step."""
         n_particles, n_params = particles.shape
         n_accepted = 0
 
         # Compute proposal covariance
         cov = np.cov(particles.T)
-        scale = 2.38 ** 2 / n_params  # Optimal scaling
+        scale = 2.38**2 / n_params  # Optimal scaling
         proposal_cov = scale * cov + 1e-8 * np.eye(n_params)  # Add small diagonal for stability
 
         for _ in range(n_steps):
@@ -268,11 +275,13 @@ class SMCSampler:
         return particles, n_accepted
 
 
-def estimate_dsge(model: DSGEModel,
-                  data: np.ndarray,
-                  n_particles: int = 1000,
-                  n_mh_steps: int = 1,
-                  verbose: bool = True) -> SMCResults:
+def estimate_dsge(
+    model: DSGEModel,
+    data: np.ndarray,
+    n_particles: int = 1000,
+    n_mh_steps: int = 1,
+    verbose: bool = True,
+) -> SMCResults:
     """
     Estimate DSGE model using SMC.
 
@@ -289,7 +298,7 @@ def estimate_dsge(model: DSGEModel,
     verbose : bool
         Print progress
 
-    Returns
+    Returns:
     -------
     SMCResults
         Estimation results

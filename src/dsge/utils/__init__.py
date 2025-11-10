@@ -1,5 +1,3 @@
-"""
-Utility functions for DSGE models.
-"""
+"""Utility functions for DSGE models."""
 
 __all__ = []

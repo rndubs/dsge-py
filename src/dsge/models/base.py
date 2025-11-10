@@ -1,25 +1,26 @@
-"""
-Base classes for DSGE model specification.
-"""
+"""Base classes for DSGE model specification."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+
 import numpy as np
+
 from .parameters import ParameterSet
 
 
 class ModelSpecification:
     """Specification of a DSGE model's structure."""
 
-    def __init__(self,
-                 n_states: int,
-                 n_controls: int,
-                 n_shocks: int,
-                 n_observables: int,
-                 state_names: Optional[List[str]] = None,
-                 control_names: Optional[List[str]] = None,
-                 shock_names: Optional[List[str]] = None,
-                 observable_names: Optional[List[str]] = None):
+    def __init__(
+        self,
+        n_states: int,
+        n_controls: int,
+        n_shocks: int,
+        n_observables: int,
+        state_names: list[str] | None = None,
+        control_names: list[str] | None = None,
+        shock_names: list[str] | None = None,
+        observable_names: list[str] | None = None,
+    ) -> None:
         """
         Initialize model specification.
 
@@ -47,10 +48,10 @@ class ModelSpecification:
         self.n_shocks = n_shocks
         self.n_observables = n_observables
 
-        self.state_names = state_names or [f's{i}' for i in range(n_states)]
-        self.control_names = control_names or [f'c{i}' for i in range(n_controls)]
-        self.shock_names = shock_names or [f'e{i}' for i in range(n_shocks)]
-        self.observable_names = observable_names or [f'y{i}' for i in range(n_observables)]
+        self.state_names = state_names or [f"s{i}" for i in range(n_states)]
+        self.control_names = control_names or [f"c{i}" for i in range(n_controls)]
+        self.shock_names = shock_names or [f"e{i}" for i in range(n_shocks)]
+        self.observable_names = observable_names or [f"y{i}" for i in range(n_observables)]
 
         # Validate dimensions
         assert len(self.state_names) == n_states
@@ -66,7 +67,7 @@ class DSGEModel(ABC):
     This class defines the interface that all DSGE models must implement.
     """
 
-    def __init__(self, spec: ModelSpecification):
+    def __init__(self, spec: ModelSpecification) -> None:
         """
         Initialize DSGE model.
 
@@ -87,10 +88,9 @@ class DSGEModel(ABC):
         This method should be implemented by subclasses to add all
         model parameters to self.parameters.
         """
-        pass
 
     @abstractmethod
-    def system_matrices(self, params: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
+    def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """
         Compute the linearized system matrices.
 
@@ -105,15 +105,16 @@ class DSGEModel(ABC):
         params : array, optional
             Parameter values. If None, use current parameter values.
 
-        Returns
+        Returns:
         -------
         dict
             Dictionary containing 'Gamma0', 'Gamma1', 'Psi', 'Pi' matrices
         """
-        pass
 
     @abstractmethod
-    def measurement_equation(self, params: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
+    def measurement_equation(
+        self, params: np.ndarray | None = None
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Define the measurement equation linking states to observables.
 
@@ -124,16 +125,15 @@ class DSGEModel(ABC):
         params : array, optional
             Parameter values. If None, use current parameter values.
 
-        Returns
+        Returns:
         -------
         Z : array
             Measurement matrix (n_obs x n_states)
         D : array
             Constant term (n_obs,)
         """
-        pass
 
-    def shock_covariance(self, params: Optional[np.ndarray] = None) -> np.ndarray:
+    def shock_covariance(self, params: np.ndarray | None = None) -> np.ndarray:
         """
         Covariance matrix of structural shocks.
 
@@ -142,7 +142,7 @@ class DSGEModel(ABC):
         params : array, optional
             Parameter values. If None, use current parameter values.
 
-        Returns
+        Returns:
         -------
         Q : array
             Shock covariance matrix (n_shocks x n_shocks)
@@ -150,7 +150,7 @@ class DSGEModel(ABC):
         # Default: diagonal matrix with unit variances
         return np.eye(self.spec.n_shocks)
 
-    def measurement_error_covariance(self, params: Optional[np.ndarray] = None) -> np.ndarray:
+    def measurement_error_covariance(self, params: np.ndarray | None = None) -> np.ndarray:
         """
         Covariance matrix of measurement errors.
 
@@ -159,7 +159,7 @@ class DSGEModel(ABC):
         params : array, optional
             Parameter values. If None, use current parameter values.
 
-        Returns
+        Returns:
         -------
         R : array
             Measurement error covariance matrix (n_obs x n_obs)
@@ -167,7 +167,7 @@ class DSGEModel(ABC):
         # Default: no measurement error
         return np.zeros((self.spec.n_observables, self.spec.n_observables))
 
-    def steady_state(self, params: Optional[np.ndarray] = None) -> np.ndarray:
+    def steady_state(self, params: np.ndarray | None = None) -> np.ndarray:
         """
         Compute the steady state of the model.
 
@@ -176,7 +176,7 @@ class DSGEModel(ABC):
         params : array, optional
             Parameter values. If None, use current parameter values.
 
-        Returns
+        Returns:
         -------
         ss : array
             Steady state values (n_states + n_controls,)
@@ -188,7 +188,7 @@ class DSGEModel(ABC):
         """
         Validate model specification.
 
-        Returns
+        Returns:
         -------
         valid : bool
             True if model is valid
@@ -198,16 +198,15 @@ class DSGEModel(ABC):
             mats = self.system_matrices()
             n_total = self.spec.n_states + self.spec.n_controls
 
-            assert mats['Gamma0'].shape == (n_total, n_total)
-            assert mats['Gamma1'].shape == (n_total, n_total)
-            assert mats['Psi'].shape == (n_total, self.spec.n_shocks)
-            assert mats['Pi'].shape[0] == n_total
+            assert mats["Gamma0"].shape == (n_total, n_total)
+            assert mats["Gamma1"].shape == (n_total, n_total)
+            assert mats["Psi"].shape == (n_total, self.spec.n_shocks)
+            assert mats["Pi"].shape[0] == n_total
 
             Z, D = self.measurement_equation()
             assert Z.shape == (self.spec.n_observables, n_total)
             assert D.shape == (self.spec.n_observables,)
 
             return True
-        except Exception as e:
-            print(f"Model validation failed: {e}")
+        except Exception:
             return False

@@ -1,15 +1,13 @@
-"""
-Solution methods for DSGE models.
-"""
+"""Solution methods for DSGE models."""
 
-from .linear import solve_linear_model, LinearSolution
-from .occbin import OccBinSolver, OccBinConstraint, OccBinSolution, create_zlb_constraint
+from .linear import LinearSolution, solve_linear_model
+from .occbin import OccBinConstraint, OccBinSolution, OccBinSolver, create_zlb_constraint
 
 __all__ = [
-    'solve_linear_model',
-    'LinearSolution',
-    'OccBinSolver',
-    'OccBinConstraint',
-    'OccBinSolution',
-    'create_zlb_constraint'
+    "LinearSolution",
+    "OccBinConstraint",
+    "OccBinSolution",
+    "OccBinSolver",
+    "create_zlb_constraint",
+    "solve_linear_model",
 ]

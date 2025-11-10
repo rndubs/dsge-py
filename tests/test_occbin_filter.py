@@ -1,10 +1,10 @@
 """Tests for OccBin filtering."""
 
 import numpy as np
-import pytest
+
+from dsge.filters.occbin_filter import OccBinParticleFilter, occbin_filter
 from dsge.solvers.linear import LinearSolution
 from dsge.solvers.occbin import create_zlb_constraint
-from dsge.filters.occbin_filter import occbin_filter, OccBinParticleFilter
 
 
 def create_test_solutions():
@@ -19,7 +19,7 @@ def create_test_solutions():
         Q=np.array([[0.1**2]]),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     # M2: Constrained regime (x_t = 0.5*x_{t-1} + eps_t)
@@ -32,13 +32,13 @@ def create_test_solutions():
         Q=np.array([[0.1**2]]),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     return solution_M1, solution_M2
 
 
-def test_occbin_filter_basic():
+def test_occbin_filter_basic() -> None:
     """Test basic OccBin filtering."""
     # Create solutions
     solution_M1, solution_M2 = create_test_solutions()
@@ -68,7 +68,7 @@ def test_occbin_filter_basic():
         Z=Z,
         D=D,
         H=H,
-        max_iter=20
+        max_iter=20,
     )
 
     # Check basic properties
@@ -81,7 +81,7 @@ def test_occbin_filter_basic():
     assert np.sum(results.regime_sequence == 1) > 0
 
 
-def test_occbin_filter_convergence():
+def test_occbin_filter_convergence() -> None:
     """Test that OccBin filter converges."""
     solution_M1, solution_M2 = create_test_solutions()
     constraint = create_zlb_constraint(variable_index=0, bound=0.0)
@@ -103,14 +103,14 @@ def test_occbin_filter_convergence():
         Z=Z,
         D=D,
         H=H,
-        max_iter=10
+        max_iter=10,
     )
 
     # Should converge in reasonable number of iterations
     assert results.n_iterations < 10
 
 
-def test_occbin_filter_no_regime_switch():
+def test_occbin_filter_no_regime_switch() -> None:
     """Test OccBin filter when constraint never binds."""
     solution_M1, solution_M2 = create_test_solutions()
 
@@ -134,7 +134,7 @@ def test_occbin_filter_no_regime_switch():
         Z=Z,
         D=D,
         H=H,
-        max_iter=10
+        max_iter=10,
     )
 
     # All periods should be in reference regime
@@ -142,7 +142,7 @@ def test_occbin_filter_no_regime_switch():
     assert results.n_iterations <= 2  # Should converge immediately
 
 
-def test_occbin_particle_filter_basic():
+def test_occbin_particle_filter_basic() -> None:
     """Test basic particle filter for OccBin."""
     solution_M1, solution_M2 = create_test_solutions()
     constraint = create_zlb_constraint(variable_index=0, bound=-0.5)
@@ -162,7 +162,7 @@ def test_occbin_particle_filter_basic():
         solution_M1=solution_M1,
         solution_M2=solution_M2,
         constraint=constraint,
-        n_particles=100  # Small for speed
+        n_particles=100,  # Small for speed
     )
 
     results = pf.filter(y=obs, Z=Z, D=D, H=H)
@@ -178,7 +178,7 @@ def test_occbin_particle_filter_basic():
     assert np.allclose(np.sum(results.regime_probabilities, axis=1), 1.0)
 
 
-def test_occbin_filter_missing_data():
+def test_occbin_filter_missing_data() -> None:
     """Test OccBin filter with missing observations."""
     solution_M1, solution_M2 = create_test_solutions()
     constraint = create_zlb_constraint(variable_index=0, bound=0.0)
@@ -201,7 +201,7 @@ def test_occbin_filter_missing_data():
         Z=Z,
         D=D,
         H=H,
-        max_iter=10
+        max_iter=10,
     )
 
     # Should handle missing data gracefully

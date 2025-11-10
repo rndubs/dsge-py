@@ -1,11 +1,11 @@
 """Tests for linear solvers."""
 
 import numpy as np
-import pytest
-from dsge.solvers.linear import solve_linear_model, simulate
+
+from dsge.solvers.linear import simulate, solve_linear_model
 
 
-def test_solve_ar1():
+def test_solve_ar1() -> None:
     """Test solving a simple AR(1) model."""
     # AR(1): x_t = ρ*x_{t-1} + ε_t with ρ = 0.9
     Gamma0 = np.array([[1.0]])
@@ -15,28 +15,27 @@ def test_solve_ar1():
 
     solution, info = solve_linear_model(Gamma0, Gamma1, Psi, Pi, n_states=1)
 
-    assert info['is_stable']
+    assert info["is_stable"]
     assert np.allclose(solution.T, [[0.9]], atol=1e-6)
     assert np.allclose(solution.R, [[1.0]], atol=1e-6)
 
 
-def test_solve_var2():
+def test_solve_var2() -> None:
     """Test solving a VAR(1) with 2 variables."""
     # x1_t = 0.5*x1_{t-1} + 0.1*x2_{t-1} + ε1_t
     # x2_t = 0.2*x1_{t-1} + 0.7*x2_{t-1} + ε2_t
     Gamma0 = np.eye(2)
-    Gamma1 = np.array([[0.5, 0.1],
-                       [0.2, 0.7]])
+    Gamma1 = np.array([[0.5, 0.1], [0.2, 0.7]])
     Psi = np.eye(2)
     Pi = np.eye(2) * 1e-10
 
     solution, info = solve_linear_model(Gamma0, Gamma1, Psi, Pi, n_states=2)
 
-    assert info['is_stable']
+    assert info["is_stable"]
     assert np.allclose(solution.T, Gamma1, atol=1e-6)
 
 
-def test_unstable_model():
+def test_unstable_model() -> None:
     """Test that unstable models are detected."""
     # x_t = 1.5*x_{t-1} + ε_t (explosive)
     Gamma0 = np.array([[1.0]])
@@ -44,12 +43,12 @@ def test_unstable_model():
     Psi = np.array([[1.0]])
     Pi = np.array([[1e-10]])
 
-    solution, info = solve_linear_model(Gamma0, Gamma1, Psi, Pi, n_states=1)
+    _solution, info = solve_linear_model(Gamma0, Gamma1, Psi, Pi, n_states=1)
 
-    assert not info['is_stable']
+    assert not info["is_stable"]
 
 
-def test_simulate():
+def test_simulate() -> None:
     """Test simulation."""
     # Simple AR(1)
     from dsge.solvers.linear import LinearSolution
@@ -63,7 +62,7 @@ def test_simulate():
         Q=np.eye(1),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     states, obs = simulate(solution, n_periods=100, random_seed=42)

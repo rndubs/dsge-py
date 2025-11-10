@@ -1,11 +1,11 @@
 """Tests for Kalman filter."""
 
 import numpy as np
-import pytest
+
 from dsge.filters.kalman import kalman_filter, kalman_smoother
 
 
-def test_kalman_filter_ar1():
+def test_kalman_filter_ar1() -> None:
     """Test Kalman filter on AR(1) model."""
     # Simulate AR(1) data
     T_periods = 100
@@ -15,7 +15,7 @@ def test_kalman_filter_ar1():
     np.random.seed(42)
     states = np.zeros((T_periods, 1))
     for t in range(1, T_periods):
-        states[t] = rho * states[t-1] + np.random.normal(0, sigma, 1)
+        states[t] = rho * states[t - 1] + np.random.normal(0, sigma, 1)
 
     obs = states + np.random.normal(0, 0.1, (T_periods, 1))
 
@@ -35,7 +35,7 @@ def test_kalman_filter_ar1():
     assert results.predicted_states.shape == (T_periods, 1)
 
 
-def test_kalman_filter_missing_data():
+def test_kalman_filter_missing_data() -> None:
     """Test Kalman filter with missing observations."""
     T_periods = 50
     rho = 0.8
@@ -44,7 +44,7 @@ def test_kalman_filter_missing_data():
     np.random.seed(42)
     states = np.zeros((T_periods, 1))
     for t in range(1, T_periods):
-        states[t] = rho * states[t-1] + np.random.normal(0, sigma, 1)
+        states[t] = rho * states[t - 1] + np.random.normal(0, sigma, 1)
 
     obs = states + np.random.normal(0, 0.1, (T_periods, 1))
 
@@ -66,7 +66,7 @@ def test_kalman_filter_missing_data():
     assert np.isfinite(results.filtered_states).all()
 
 
-def test_kalman_smoother():
+def test_kalman_smoother() -> None:
     """Test Kalman smoother."""
     T_periods = 50
     rho = 0.9
@@ -75,7 +75,7 @@ def test_kalman_smoother():
     np.random.seed(42)
     states = np.zeros((T_periods, 1))
     for t in range(1, T_periods):
-        states[t] = rho * states[t-1] + np.random.normal(0, sigma, 1)
+        states[t] = rho * states[t - 1] + np.random.normal(0, sigma, 1)
 
     obs = states + np.random.normal(0, 0.1, (T_periods, 1))
 
