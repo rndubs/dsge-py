@@ -244,7 +244,7 @@ def transform_series(
 
     if transformation == "quarterly_average":
         # If monthly, convert to quarterly
-        freq = pd.infer_freq(cast(DatetimeIndex, series.index))
+        freq = pd.infer_freq(cast("DatetimeIndex", series.index))
         if freq and ("M" in freq or "D" in freq):
             return to_quarterly(series, agg_method="mean")
         return series
@@ -318,7 +318,7 @@ def load_nyfed_data(
 
 
         # Convert to quarterly if needed
-        freq = pd.infer_freq(cast(DatetimeIndex, series.index))
+        freq = pd.infer_freq(cast("DatetimeIndex", series.index))
         if freq and ("M" in freq or "D" in freq or "B" in freq):
             series = to_quarterly(series, "mean")
         elif (
@@ -419,11 +419,11 @@ def validate_data(df: pd.DataFrame, verbose: bool = True) -> dict[str, Any]:
     if verbose:
 
 
-        for _var, count in cast(dict[str, Any], results["missing_count"]).items():
+        for _var, count in cast("dict[str, Any]", results["missing_count"]).items():
             if count > 0:
                 pass
 
-        for _var, count in cast(dict[str, Any], results["inf_count"]).items():
+        for _var, count in cast("dict[str, Any]", results["inf_count"]).items():
             if count > 0:
                 pass
 
