@@ -780,48 +780,7 @@ class SmetsWouters2007(DSGEModel):
         # STICKY PRICE/WAGE ECONOMY EQUATIONS (13 equations)
         # ===================================================================
 
-        # Equation 1: Marginal cost
-        # mc = calfa*rk + (1-calfa)*w - a
-        Gamma0[idx_mc, idx_mc] = 1.0
-        Gamma0[idx_mc, idx_rk] = -calfa
-        Gamma0[idx_mc, idx_w] = -(1.0 - calfa)
-        Gamma0[idx_mc, idx_a] = 1.0
-
-        # Equation 2: Capacity utilization
-        # zcap = (1/(czcap/(1-czcap))) * rk
-        Gamma0[idx_zcap, idx_zcap] = 1.0
-        Gamma0[idx_zcap, idx_rk] = -zcap_coef
-
-        # Equation 3: Capital FOC
-        # rk = w + lab - k
-        Gamma0[idx_k, idx_rk] = 1.0
-        Gamma0[idx_k, idx_w] = -1.0
-        Gamma0[idx_k, idx_lab] = -1.0
-        Gamma0[idx_k, idx_k] = 1.0
-
-        # Equation 4: Capital services
-        # k = kp(-1) + zcap
-        Gamma0[idx_lab, idx_k] = 1.0
-        Gamma0[idx_lab, idx_zcap] = -1.0
-        Gamma1[idx_lab, idx_kp] = 1.0
-
-        # Equation 5: Investment Euler
-        # inve = (1/(1+cbetabar*cgamma))*(inve(-1) + cbetabar*cgamma*E[inve(1)] + (1/(cgamma^2*csadjcost))*pk) + qs
-        Gamma0[idx_inve, idx_inve] = 1.0
-        Gamma0[idx_inve, idx_pk] = -inv_coef * pk_coef
-        Gamma0[idx_inve, idx_qs] = -1.0
-        Gamma1[idx_inve, idx_inve] = inv_coef
-        Pi[idx_inve, idx_eta_inve] = -inv_coef * cbetabar * cgamma
-
-        # Equation 6: Capital value
-        # pk = -r + E[pinf(1)] + (crk/(crk+(1-ctou)))*E[rk(1)] + ((1-ctou)/(crk+(1-ctou)))*E[pk(1)]
-        Gamma0[idx_pk, idx_pk] = 1.0
-        Gamma0[idx_pk, idx_r] = 1.0
-        Pi[idx_pk, idx_eta_pinf] = -1.0
-        Pi[idx_pk, idx_eta_rk] = -rk_share
-        Pi[idx_pk, idx_eta_pk] = -pk_share
-
-        # Equation 7: Consumption Euler
+        # Equation 1: Consumption Euler (row 0: c)
         # c = (chabb/cgamma)/(1+chabb/cgamma)*c(-1) + (1/(1+chabb/cgamma))*E[c(1)]
         #     + ((csigma-1)*cwhlc/(csigma*(1+chabb/cgamma)))*(lab - E[lab(1)])
         #     - (1-chabb/cgamma)/(csigma*(1+chabb/cgamma))*(r - E[pinf(1)]) + b
@@ -834,7 +793,15 @@ class SmetsWouters2007(DSGEModel):
         Pi[idx_c, idx_eta_lab] = lab_coef
         Pi[idx_c, idx_eta_pinf2] = -r_coef
 
-        # Equation 8: Resource constraint
+        # Equation 2: Investment Euler (row 1: inve)
+        # inve = (1/(1+cbetabar*cgamma))*(inve(-1) + cbetabar*cgamma*E[inve(1)] + (1/(cgamma^2*csadjcost))*pk) + qs
+        Gamma0[idx_inve, idx_inve] = 1.0
+        Gamma0[idx_inve, idx_pk] = -inv_coef * pk_coef
+        Gamma0[idx_inve, idx_qs] = -1.0
+        Gamma1[idx_inve, idx_inve] = inv_coef
+        Pi[idx_inve, idx_eta_inve] = -inv_coef * cbetabar * cgamma
+
+        # Equation 3: Resource constraint (row 2: y)
         # y = ccy*c + ciy*inve + cg*g + crkky*zcap
         Gamma0[idx_y, idx_y] = 1.0
         Gamma0[idx_y, idx_c] = -ccy
@@ -842,28 +809,40 @@ class SmetsWouters2007(DSGEModel):
         Gamma0[idx_y, idx_g] = -p['cg']
         Gamma0[idx_y, idx_zcap] = -crkky
 
-        # Equation 9: Production function
+        # Equation 4: Production function (row 3: lab)
         # y = cfc*(calfa*k + (1-calfa)*lab + a)
-        Gamma0[idx_w, idx_y] = 1.0
-        Gamma0[idx_w, idx_k] = -cfc * calfa
-        Gamma0[idx_w, idx_lab] = -cfc * (1.0 - calfa)
-        Gamma0[idx_w, idx_a] = -cfc
+        Gamma0[idx_lab, idx_y] = 1.0
+        Gamma0[idx_lab, idx_k] = -cfc * calfa
+        Gamma0[idx_lab, idx_lab] = -cfc * (1.0 - calfa)
+        Gamma0[idx_lab, idx_a] = -cfc
 
-        # Equation 10: Phillips curve (prices)
-        # pinf = (1/(1+cbetabar*cgamma*cindp))*(cbetabar*cgamma*E[pinf(1)] + cindp*pinf(-1)
-        #        + ((1-cprobp)*(1-cbetabar*cgamma*cprobp)/cprobp)/((cfc-1)*curvp+1)*mc) + spinf
-        phillips_denom = 1.0 + cbetabar * cgamma * cindp
-        phillips_fwd = cbetabar * cgamma / phillips_denom
-        phillips_lag = cindp / phillips_denom
-        phillips_mc = ((1 - cprobp) * (1 - cbetabar * cgamma * cprobp) / cprobp) / ((cfc - 1) * curvp + 1) / phillips_denom
+        # Equation 5: Capital services (row 4: k)
+        # k = kp(-1) + zcap
+        Gamma0[idx_k, idx_k] = 1.0
+        Gamma0[idx_k, idx_zcap] = -1.0
+        Gamma1[idx_k, idx_kp] = 1.0
 
-        Gamma0[idx_pinf, idx_pinf] = 1.0
-        Gamma0[idx_pinf, idx_mc] = -phillips_mc
-        Gamma0[idx_pinf, idx_spinf] = -1.0
-        Gamma1[idx_pinf, idx_pinf] = phillips_lag
-        Pi[idx_pinf, idx_eta_pinf] = -phillips_fwd
+        # Equation 6: Capital value (row 5: pk)
+        # pk = -r + E[pinf(1)] + (crk/(crk+(1-ctou)))*E[rk(1)] + ((1-ctou)/(crk+(1-ctou)))*E[pk(1)]
+        Gamma0[idx_pk, idx_pk] = 1.0
+        Gamma0[idx_pk, idx_r] = 1.0
+        Pi[idx_pk, idx_eta_pinf] = -1.0
+        Pi[idx_pk, idx_eta_rk] = -rk_share
+        Pi[idx_pk, idx_eta_pk] = -pk_share
 
-        # Equation 11: Phillips curve (wages)
+        # Equation 7: Capacity utilization (row 6: zcap)
+        # zcap = (1/(czcap/(1-czcap))) * rk
+        Gamma0[idx_zcap, idx_zcap] = 1.0
+        Gamma0[idx_zcap, idx_rk] = -zcap_coef
+
+        # Equation 8: Capital FOC (row 7: rk)
+        # rk = w + lab - k
+        Gamma0[idx_rk, idx_rk] = 1.0
+        Gamma0[idx_rk, idx_w] = -1.0
+        Gamma0[idx_rk, idx_lab] = -1.0
+        Gamma0[idx_rk, idx_k] = 1.0
+
+        # Equation 9: Wage Phillips curve (row 8: w)
         # w = (1/(1+cbetabar*cgamma))*w(-1) + (cbetabar*cgamma/(1+cbetabar*cgamma))*E[w(1)]
         #     + (cindw/(1+cbetabar*cgamma))*pinf(-1) - (1+cbetabar*cgamma*cindw)/(1+cbetabar*cgamma)*pinf
         #     + (cbetabar*cgamma)/(1+cbetabar*cgamma)*E[pinf(1)]
@@ -877,46 +856,50 @@ class SmetsWouters2007(DSGEModel):
         wage_pinf_fwd = cbetabar * cgamma / wage_denom
         wage_mrs_coef = ((1 - cprobw) * (1 - cbetabar * cgamma * cprobw) / (cprobw * wage_denom)) / ((clandaw - 1) * curvw + 1)
 
-        # This is equation for idx_r (reusing index for wage Phillips curve)
-        # Actually, let me use a different row. The wage equation uses idx_w row already for production.
-        # Let me reconsider the equation assignments...
+        Gamma0[idx_w, idx_w] = 1.0 + wage_mrs_coef
+        Gamma0[idx_w, idx_lab] = -wage_mrs_coef * csigl
+        Gamma0[idx_w, idx_c] = -wage_mrs_coef * wage_c_coef
+        Gamma0[idx_w, idx_pinf] = -wage_pinf_cur
+        Gamma0[idx_w, idx_sw] = -1.0
+        Gamma1[idx_w, idx_w] = wage_lag_coef
+        Gamma1[idx_w, idx_c] = wage_mrs_coef * wage_c_lag_coef
+        Gamma1[idx_w, idx_pinf] = wage_pinf_lag
+        Pi[idx_w, idx_eta_w] = -wage_fwd_coef
+        Pi[idx_w, idx_eta_pinf] = -wage_pinf_fwd
 
-        # Actually, I need to reconsider the indexing. Let me continue with the remaining equations
-        # and assign the wage Phillips curve to the idx_r position.
-
-        Gamma0[idx_r, idx_w] = wage_mrs_coef
-        Gamma0[idx_r, idx_lab] = -wage_mrs_coef * csigl
-        Gamma0[idx_r, idx_c] = -wage_mrs_coef * wage_c_coef
-        Gamma0[idx_r, idx_pinf] = -wage_pinf_cur
-        Gamma0[idx_r, idx_sw] = -1.0
-        Gamma1[idx_r, idx_w] = wage_lag_coef
-        Gamma1[idx_r, idx_c] = wage_mrs_coef * wage_c_lag_coef
-        Gamma1[idx_r, idx_pinf] = wage_pinf_lag
-        Pi[idx_r, idx_eta_w] = -wage_fwd_coef
-        Pi[idx_r, idx_eta_pinf] = -wage_pinf_fwd
-
-        # Wait, I'm running into conflicts with my equation assignments. Let me redesign this more carefully.
-        # The issue is that I'm trying to assign multiple equations to the same row.
-
-        # Let me stop here and reconsider the matrix structure. I need to carefully map each equation
-        # to a unique row in the Gamma0/Gamma1 matrices.
-
-        # For now, let me add the remaining key equations:
-
-        # Equation 12: Taylor rule
+        # Equation 10: Taylor rule (row 9: r)
         # r = crpi*(1-crr)*pinf + cry*(1-crr)*(y-yf) + crdy*(y-yf-y(-1)+yf(-1)) + crr*r(-1) + ms
-        # This needs to go in a different row. Let me use idx_ms row temporarily.
-        taylor_row = idx_ms  # Will fix this
-        Gamma0[taylor_row, idx_r] = 1.0
-        Gamma0[taylor_row, idx_pinf] = -crpi * (1 - crr)
-        Gamma0[taylor_row, idx_y] = -(cry * (1 - crr) + crdy)
-        Gamma0[taylor_row, idx_yf] = cry * (1 - crr) + crdy
-        Gamma0[taylor_row, idx_ms] = -1.0
-        Gamma1[taylor_row, idx_r] = crr
-        Gamma1[taylor_row, idx_y] = -crdy
-        Gamma1[taylor_row, idx_yf] = crdy
+        Gamma0[idx_r, idx_r] = 1.0
+        Gamma0[idx_r, idx_pinf] = -crpi * (1 - crr)
+        Gamma0[idx_r, idx_y] = -(cry * (1 - crr) + crdy)
+        Gamma0[idx_r, idx_yf] = cry * (1 - crr) + crdy
+        Gamma0[idx_r, idx_ms] = -1.0
+        Gamma1[idx_r, idx_r] = crr
+        Gamma1[idx_r, idx_y] = -crdy
+        Gamma1[idx_r, idx_yf] = crdy
 
-        # Capital law of motion
+        # Equation 11: Price Phillips curve (row 10: pinf)
+        # pinf = (1/(1+cbetabar*cgamma*cindp))*(cbetabar*cgamma*E[pinf(1)] + cindp*pinf(-1)
+        #        + ((1-cprobp)*(1-cbetabar*cgamma*cprobp)/cprobp)/((cfc-1)*curvp+1)*mc) + spinf
+        phillips_denom = 1.0 + cbetabar * cgamma * cindp
+        phillips_fwd = cbetabar * cgamma / phillips_denom
+        phillips_lag = cindp / phillips_denom
+        phillips_mc = ((1 - cprobp) * (1 - cbetabar * cgamma * cprobp) / cprobp) / ((cfc - 1) * curvp + 1) / phillips_denom
+
+        Gamma0[idx_pinf, idx_pinf] = 1.0
+        Gamma0[idx_pinf, idx_mc] = -phillips_mc
+        Gamma0[idx_pinf, idx_spinf] = -1.0
+        Gamma1[idx_pinf, idx_pinf] = phillips_lag
+        Pi[idx_pinf, idx_eta_pinf] = -phillips_fwd
+
+        # Equation 12: Marginal cost (row 11: mc)
+        # mc = calfa*rk + (1-calfa)*w - a
+        Gamma0[idx_mc, idx_mc] = 1.0
+        Gamma0[idx_mc, idx_rk] = -calfa
+        Gamma0[idx_mc, idx_w] = -(1.0 - calfa)
+        Gamma0[idx_mc, idx_a] = 1.0
+
+        # Equation 13: Capital law of motion (row 12: kp)
         # kp = (1-cikbar)*kp(-1) + cikbar*inve + cikbar*(cgamma^2*csadjcost)*qs
         Gamma0[idx_kp, idx_kp] = 1.0
         Gamma0[idx_kp, idx_inve] = -cikbar
