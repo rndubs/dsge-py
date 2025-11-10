@@ -25,6 +25,8 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=9.0.0",
+    "ruff>=0.14.4",
+    "ty>=0.0.1a25",
 ]
 
 [tool.pytest.ini_options]
@@ -55,3 +57,128 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
 ]
+
+[tool.ruff]
+# Target Python 3.11+
+target-version = "py311"
+# Line length for formatting
+line-length = 100
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+# Use spaces for indentation
+indent-style = "space"
+# Automatically format docstrings
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    # ruff-specific rules
+    "RUF",
+    # pycodestyle
+    "E",
+    # pycodestyle warnings
+    "W",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # isort
+    "I",
+    # McMabe code complexity
+    "C90",
+    # PEP8 Naming
+    "N",
+    # pydocstyle
+    "D",
+    # pylint
+    "PL",
+    # numpy deprecated alias
+    "NPY001",
+    # eradicate
+    "ERA",
+    # flake8-annotations
+    "ANN",
+    # flake8-async
+    "ASYNC",
+    # flake8-bugbear
+    "B",
+    # flake builtins
+    "A",
+    # flake8-comprehensions
+    "C4",
+    # flake8-debugger
+    "T100",
+    # flake8-errmsg
+    "EM",
+    # flake8-future-annotations
+    "FA",
+    # flake8-implicit-str-concat
+    "ISC",
+    # flake8-logging
+    "LOG",
+    # flake8-logging-format
+    "G",
+    # flake8-no-pep420
+    "INP",
+    # flake8-pie
+    "PIE",
+    # flake8-print
+    "T20",
+    # flake8-pytest-style
+    "PT",
+    # flake8 quotes
+    "Q",
+    # flake8-return
+    "RET",
+    # flake8-simplify
+    "SIM",
+    # flake8-todos
+    "TD",
+    # flake8-type-checking
+    "TCH",
+    # flake8-unused-arguments
+    "ARG",
+    # flake8-use-pathlib
+    "PTH",
+]
+
+ignore = [
+    "ISC001",  # avoid conflicts with the ruff formatter
+    "D203",  # D203 (one-blank-line-before-class) conflicts with D211 (no-blank-line-before-class)
+    "D212",  # D212 (multi-line-summary-first-line) conflicts with D213 (multi-line-summary-second-line)
+    # Disable pydocstyle checks for "google" style. See here:
+    # - https://www.pydocstyle.org/en/stable/error_codes.html#default-conventions
+    "D204",
+    "D213",
+    "D215",
+    "D400",
+    "D401",
+    "D404",
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D413",
+    "PLR0913",
+    "TC001",
+    "TC002",
+    # Mathematical notation conventions for DSGE modeling
+    "N806",  # Capital letters for matrices (T, R, C, H, etc.) are standard in linear algebra
+    "N803",  # Greek letters and mathematical notation for parameters
+    "PLC2401",  # Non-ASCII names (Greek letters) are standard in economics
+    "RUF001",  # Allow Greek letters in strings
+    "RUF002",  # Allow Greek letters in docstrings
+    "RUF003",  # Allow Greek letters in comments
+    # Research code conventions
+    "ERA001",  # Commented code might be intentional for research/experimentation
+    "INP001",  # Scripts and examples don't need __init__.py
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty]
+# Strict type checking settings (ty is strict by default)
+environment.python-version = "3.11"

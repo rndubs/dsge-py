@@ -5,10 +5,11 @@ This module implements solution methods for linear(ized) DSGE models,
 including the Blanchard-Kahn (generalized Schur decomposition) method.
 """
 
+from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 from scipy import linalg
-from typing import Dict, Optional, Tuple
-from dataclasses import dataclass
 
 
 @dataclass
@@ -34,12 +35,14 @@ class LinearSolution:
     is_stable: bool  # Whether solution is stable
 
 
-def solve_linear_model(Gamma0: np.ndarray,
-                       Gamma1: np.ndarray,
-                       Psi: np.ndarray,
-                       Pi: np.ndarray,
-                       n_states: int,
-                       tol: float = 1e-6) -> Tuple[LinearSolution, Dict[str, any]]:
+def solve_linear_model(
+    Gamma0: np.ndarray,
+    Gamma1: np.ndarray,
+    Psi: np.ndarray,
+    Pi: np.ndarray,
+    n_states: int,
+    tol: float = 1e-6,
+) -> tuple[LinearSolution, dict[str, Any]]:
     """
     Solve a linear DSGE model using the Blanchard-Kahn method.
 
@@ -63,7 +66,7 @@ def solve_linear_model(Gamma0: np.ndarray,
     tol : float
         Tolerance for stability (eigenvalues with |λ| < 1 + tol are stable)
 
-    Returns
+    Returns:
     -------
     solution : LinearSolution
         The model solution
@@ -84,7 +87,7 @@ def solve_linear_model(Gamma0: np.ndarray,
 
             # Check stability: all eigenvalues of T should have |λ| < 1
             eigenvalues = linalg.eigvals(T)
-            is_stable = np.all(np.abs(eigenvalues) < 1 + tol)
+            is_stable = bool(np.all(np.abs(eigenvalues) < 1 + tol))
 
             # Real part for numerical stability
             T = np.real(T)
@@ -99,30 +102,34 @@ def solve_linear_model(Gamma0: np.ndarray,
                 Q=np.eye(n_shocks),
                 n_unstable=0 if is_stable else n_states,
                 n_states=n_states,
-                is_stable=is_stable
+                is_stable=is_stable,
             )
 
             info = {
-                'eigenvalues': eigenvalues,
-                'n_stable': n_states if is_stable else 0,
-                'n_unstable': 0 if is_stable else n_states,
-                'condition': 'stable (pure state model)' if is_stable else 'unstable (pure state model)',
-                'is_determinate': is_stable,
-                'is_stable': is_stable
+                "eigenvalues": eigenvalues,
+                "n_stable": n_states if is_stable else 0,
+                "n_unstable": 0 if is_stable else n_states,
+                "condition": "stable (pure state model)"
+                if is_stable
+                else "unstable (pure state model)",
+                "is_determinate": is_stable,
+                "is_stable": is_stable,
             }
 
             return solution, info
         except linalg.LinAlgError:
             # Singular Gamma0
-            raise ValueError("Gamma0 is singular - cannot solve system")
+            msg = "Gamma0 is singular - cannot solve system"
+            raise ValueError(msg)
 
     # Perform generalized Schur decomposition for models with controls
     # This solves the generalized eigenvalue problem: Γ0 * s_t = Γ1 * s_{t-1}
-    AA, BB, Q, Z = linalg.qz(Gamma0, Gamma1, output='complex')
+    AA, BB, Q, Z = linalg.qz(Gamma0, Gamma1, output="complex")
 
     # Compute generalized eigenvalues
-    eigenvalues = np.array([AA[i, i] / BB[i, i] if abs(BB[i, i]) > 1e-10 else np.inf
-                           for i in range(n_total)])
+    eigenvalues = np.array(
+        [AA[i, i] / BB[i, i] if abs(BB[i, i]) > 1e-10 else np.inf for i in range(n_total)]
+    )
 
     # Count stable eigenvalues (|λ| < 1)
     stable_mask = np.abs(eigenvalues) < 1 + tol
@@ -131,7 +138,7 @@ def solve_linear_model(Gamma0: np.ndarray,
 
     # Check Blanchard-Kahn condition
     # Number of unstable eigenvalues should equal number of control variables
-    is_determinate = (n_unstable == n_controls)
+    is_determinate = n_unstable == n_controls
     is_stable = is_determinate
 
     if not is_determinate:
@@ -144,24 +151,24 @@ def solve_linear_model(Gamma0: np.ndarray,
 
     # Reorder Schur decomposition to put stable eigenvalues first
     # This is the ordered QZ decomposition
-    AA, BB, alpha, beta, Q, Z = linalg.ordqz(AA, BB, sort='iuc')  # inside unit circle
+    AA, BB, _alpha, _beta, Q, Z = linalg.ordqz(AA, BB, sort="iuc")  # inside unit circle
 
     # Extract blocks
     # After reordering: stable eigenvalues are in top-left block
     Z11 = Z[:n_states, :n_states]
     Z12 = Z[:n_states, n_states:]
-    Z21 = Z[n_states:, :n_states]
-    Z22 = Z[n_states:, n_states:]
+    Z[n_states:, :n_states]
+    Z[n_states:, n_states:]
 
     # Solution for state transition
     # s_{1,t} = Z11^{-1} * Z12 * s_{2,t}
     # where s_1 are predetermined states and s_2 are non-predetermined
     if is_determinate and np.abs(linalg.det(Z11)) > 1e-10:
         # For proper solution, we need the policy function
-        S11 = AA[:n_states, :n_states]
-        S12 = AA[:n_states, n_states:]
-        T11 = BB[:n_states, :n_states]
-        T12 = BB[:n_states, n_states:]
+        AA[:n_states, :n_states]
+        AA[:n_states, n_states:]
+        BB[:n_states, :n_states]
+        BB[:n_states, n_states:]
 
         # Transition matrix for states
         T = linalg.solve(Z11, Z12)
@@ -173,7 +180,7 @@ def solve_linear_model(Gamma0: np.ndarray,
 
         # Extract state block
         Psi_1 = Psi_tilde[:n_states, :]
-        Pi_1 = Pi_tilde[:n_states, :]
+        Pi_tilde[:n_states, :]
 
         # Compute shock loading
         if np.abs(linalg.det(Z11)) > 1e-10:
@@ -205,26 +212,28 @@ def solve_linear_model(Gamma0: np.ndarray,
         Q=Q_cov,
         n_unstable=n_unstable,
         n_states=n_states,
-        is_stable=is_stable
+        is_stable=is_stable,
     )
 
     info = {
-        'eigenvalues': eigenvalues,
-        'n_stable': n_stable,
-        'n_unstable': n_unstable,
-        'condition': condition,
-        'is_determinate': is_determinate,
-        'is_stable': is_stable
+        "eigenvalues": eigenvalues,
+        "n_stable": n_stable,
+        "n_unstable": n_unstable,
+        "condition": condition,
+        "is_determinate": is_determinate,
+        "is_stable": is_stable,
     }
 
     return solution, info
 
 
-def simulate(solution: LinearSolution,
-             n_periods: int,
-             shocks: Optional[np.ndarray] = None,
-             initial_state: Optional[np.ndarray] = None,
-             random_seed: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
+def simulate(
+    solution: LinearSolution,
+    n_periods: int,
+    shocks: np.ndarray | None = None,
+    initial_state: np.ndarray | None = None,
+    random_seed: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Simulate the solved DSGE model.
 
@@ -241,7 +250,7 @@ def simulate(solution: LinearSolution,
     random_seed : int, optional
         Random seed for shock generation
 
-    Returns
+    Returns:
     -------
     states : array (n_periods x n_states)
         Simulated state variables
@@ -249,7 +258,8 @@ def simulate(solution: LinearSolution,
         Simulated observables
     """
     if not solution.is_stable:
-        raise ValueError("Cannot simulate unstable solution")
+        msg = "Cannot simulate unstable solution"
+        raise ValueError(msg)
 
     n_states = solution.T.shape[0]
     n_shocks = solution.R.shape[1]
@@ -267,14 +277,12 @@ def simulate(solution: LinearSolution,
         if random_seed is not None:
             np.random.seed(random_seed)
         # Draw from multivariate normal with covariance Q
-        shocks = np.random.multivariate_normal(np.zeros(n_shocks),
-                                               solution.Q,
-                                               size=n_periods)
+        shocks = np.random.multivariate_normal(np.zeros(n_shocks), solution.Q, size=n_periods)
 
     # Simulate
     for t in range(n_periods):
         if t > 0:
-            states[t] = solution.T @ states[t-1] + solution.R @ shocks[t] + solution.C
+            states[t] = solution.T @ states[t - 1] + solution.R @ shocks[t] + solution.C
         else:
             states[t] = states[t] + solution.R @ shocks[t] + solution.C
 

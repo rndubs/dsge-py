@@ -5,13 +5,14 @@ This module provides estimation capabilities for DSGE models with
 occasionally binding constraints.
 """
 
-import numpy as np
-from typing import Callable, Dict, Optional, Tuple
 from dataclasses import dataclass
+
+import numpy as np
+
 from ..models.base import DSGEModel
 from ..solvers.occbin import OccBinConstraint
 from .likelihood import log_likelihood_occbin
-from .smc import SMCSampler, SMCResults
+from .smc import SMCResults, SMCSampler
 
 
 @dataclass
@@ -21,7 +22,7 @@ class OccBinSMCResults(SMCResults):
 
     Extends SMCResults with OccBin-specific diagnostics.
 
-    Attributes
+    Attributes:
     ----------
     particles : array (n_particles x n_params)
         Final particle positions
@@ -38,7 +39,8 @@ class OccBinSMCResults(SMCResults):
     regime_diagnostics : dict, optional
         OccBin-specific diagnostics (regime counts, etc.)
     """
-    regime_diagnostics: Optional[Dict] = None
+
+    regime_diagnostics: dict | None = None
 
 
 class OccBinSMCSampler(SMCSampler):
@@ -49,15 +51,17 @@ class OccBinSMCSampler(SMCSampler):
     occasionally binding constraints.
     """
 
-    def __init__(self,
-                 model_M1: DSGEModel,
-                 model_M2: DSGEModel,
-                 constraint: OccBinConstraint,
-                 n_particles: int = 1000,
-                 n_phi: int = 100,
-                 lambda_param: float = 2.0,
-                 resample_threshold: float = 0.5,
-                 max_filter_iter: int = 50):
+    def __init__(
+        self,
+        model_M1: DSGEModel,
+        model_M2: DSGEModel,
+        constraint: OccBinConstraint,
+        n_particles: int = 1000,
+        n_phi: int = 100,
+        lambda_param: float = 2.0,
+        resample_threshold: float = 0.5,
+        max_filter_iter: int = 50,
+    ) -> None:
         """
         Initialize OccBin SMC sampler.
 
@@ -86,10 +90,9 @@ class OccBinSMCSampler(SMCSampler):
         self.constraint = constraint
         self.max_filter_iter = max_filter_iter
 
-    def sample(self,
-               data: np.ndarray,
-               n_mh_steps: int = 1,
-               verbose: bool = True) -> OccBinSMCResults:
+    def sample(
+        self, data: np.ndarray, n_mh_steps: int = 1, verbose: bool = True
+    ) -> OccBinSMCResults:
         """
         Run SMC sampler for OccBin model.
 
@@ -102,7 +105,7 @@ class OccBinSMCSampler(SMCSampler):
         verbose : bool
             Print progress information
 
-        Returns
+        Returns:
         -------
         OccBinSMCResults
             Estimation results with OccBin diagnostics
@@ -113,13 +116,15 @@ class OccBinSMCSampler(SMCSampler):
         n_params = len(param_names)
 
         if n_params == 0:
-            raise ValueError("No free parameters to estimate")
+            msg = "No free parameters to estimate"
+            raise ValueError(msg)
 
         # Initialize particles from prior
         particles = np.zeros((self.n_particles, n_params))
         for i, (name, param) in enumerate(free_params.items()):
             if param.prior is None:
-                raise ValueError(f"Parameter {name} has no prior distribution")
+                msg = f"Parameter {name} has no prior distribution"
+                raise ValueError(msg)
             particles[:, i] = param.prior.rvs(self.n_particles)
 
         # Initialize weights (uniform)
@@ -127,11 +132,13 @@ class OccBinSMCSampler(SMCSampler):
 
         # Evaluate initial log likelihoods
         if verbose:
-            print("Evaluating initial likelihoods...")
-        log_likelihoods = np.array([
-            self._log_likelihood_tempered(data, particles[i], 0.0)
-            for i in range(self.n_particles)
-        ])
+            pass
+        log_likelihoods = np.array(
+            [
+                self._log_likelihood_tempered(data, particles[i], 0.0)
+                for i in range(self.n_particles)
+            ]
+        )
 
         # Initialize tempering schedule
         phi = 0.0  # Start at prior (phi=0), move to posterior (phi=1)
@@ -149,7 +156,7 @@ class OccBinSMCSampler(SMCSampler):
             phi_increment = phi_new - phi
 
             if verbose:
-                print(f"\nIteration {iteration}: phi = {phi_new:.4f}")
+                pass
 
             # Reweight particles
             incremental_weights = np.exp(phi_increment * log_likelihoods)
@@ -160,11 +167,11 @@ class OccBinSMCSampler(SMCSampler):
             log_evidence += np.log(np.mean(incremental_weights))
 
             # Compute effective sample size
-            ess = 1.0 / np.sum(weights ** 2)
+            ess = 1.0 / np.sum(weights**2)
             ess_ratio = ess / self.n_particles
 
             if verbose:
-                print(f"  ESS = {ess:.0f} ({ess_ratio:.2%})")
+                pass
 
             # Resample if needed
             if ess_ratio < self.resample_threshold:
@@ -172,7 +179,7 @@ class OccBinSMCSampler(SMCSampler):
                 particles = particles[indices]
                 weights = np.ones(self.n_particles) / self.n_particles
                 if verbose:
-                    print(f"  Resampled")
+                    pass
 
             # Mutation step (Metropolis-Hastings)
             particles, n_accepted = self._mutation_step(
@@ -183,20 +190,23 @@ class OccBinSMCSampler(SMCSampler):
             n_proposed_total += self.n_particles * n_mh_steps
 
             if verbose:
-                acc_rate = n_accepted / (self.n_particles * n_mh_steps)
-                print(f"  MH acceptance rate: {acc_rate:.2%}")
+                n_accepted / (self.n_particles * n_mh_steps)
 
             # Update for next iteration
             phi = phi_new
             phi_sequence.append(phi)
 
             # Re-evaluate likelihoods at new tempering parameter
-            log_likelihoods = np.array([
-                self._log_likelihood_tempered(data, particles[i], phi)
-                for i in range(self.n_particles)
-            ])
+            log_likelihoods = np.array(
+                [
+                    self._log_likelihood_tempered(data, particles[i], phi)
+                    for i in range(self.n_particles)
+                ]
+            )
 
-        overall_acceptance_rate = n_accepted_total / n_proposed_total if n_proposed_total > 0 else 0.0
+        overall_acceptance_rate = (
+            n_accepted_total / n_proposed_total if n_proposed_total > 0 else 0.0
+        )
 
         # Compute OccBin diagnostics (optional)
         regime_diagnostics = self._compute_regime_diagnostics(data, particles, weights)
@@ -208,13 +218,10 @@ class OccBinSMCSampler(SMCSampler):
             log_likelihoods=log_likelihoods,
             acceptance_rate=overall_acceptance_rate,
             n_iterations=iteration,
-            regime_diagnostics=regime_diagnostics
+            regime_diagnostics=regime_diagnostics,
         )
 
-    def _log_likelihood_tempered(self,
-                                 data: np.ndarray,
-                                 params: np.ndarray,
-                                 phi: float) -> float:
+    def _log_likelihood_tempered(self, data: np.ndarray, params: np.ndarray, phi: float) -> float:
         """Tempered log posterior: log prior + phi * log likelihood."""
         self.model_M1.parameters.set_values(params)
         self.model_M2.parameters.set_values(params)
@@ -225,25 +232,31 @@ class OccBinSMCSampler(SMCSampler):
 
         # Evaluate OccBin likelihood
         log_lik = log_likelihood_occbin(
-            self.model_M1, self.model_M2, self.constraint,
-            data, params, max_iter=self.max_filter_iter
+            self.model_M1,
+            self.model_M2,
+            self.constraint,
+            data,
+            params,
+            max_iter=self.max_filter_iter,
         )
 
         return log_prior + phi * (log_lik - log_prior)
 
-    def _mutation_step(self,
-                      data: np.ndarray,
-                      particles: np.ndarray,
-                      log_posts: np.ndarray,
-                      phi: float,
-                      n_steps: int) -> Tuple[np.ndarray, int]:
+    def _mutation_step(
+        self,
+        data: np.ndarray,
+        particles: np.ndarray,
+        log_posts: np.ndarray,
+        phi: float,
+        n_steps: int,
+    ) -> tuple[np.ndarray, int]:
         """Metropolis-Hastings mutation step."""
         n_particles, n_params = particles.shape
         n_accepted = 0
 
         # Compute proposal covariance
         cov = np.cov(particles.T)
-        scale = 2.38 ** 2 / n_params  # Optimal scaling
+        scale = 2.38**2 / n_params  # Optimal scaling
         proposal_cov = scale * cov + 1e-8 * np.eye(n_params)
 
         for _ in range(n_steps):
@@ -264,10 +277,9 @@ class OccBinSMCSampler(SMCSampler):
 
         return particles, n_accepted
 
-    def _compute_regime_diagnostics(self,
-                                   data: np.ndarray,
-                                   particles: np.ndarray,
-                                   weights: np.ndarray) -> Dict:
+    def _compute_regime_diagnostics(
+        self, data: np.ndarray, particles: np.ndarray, weights: np.ndarray
+    ) -> dict:
         """
         Compute OccBin-specific diagnostics.
 
@@ -275,20 +287,19 @@ class OccBinSMCSampler(SMCSampler):
         """
         # For now, just return basic info
         # Could be extended to track regime sequences, binding frequencies, etc.
-        return {
-            'n_particles': len(particles),
-            'effective_sample_size': 1.0 / np.sum(weights ** 2)
-        }
+        return {"n_particles": len(particles), "effective_sample_size": 1.0 / np.sum(weights**2)}
 
 
-def estimate_occbin(model_M1: DSGEModel,
-                   model_M2: DSGEModel,
-                   constraint: OccBinConstraint,
-                   data: np.ndarray,
-                   n_particles: int = 1000,
-                   n_mh_steps: int = 1,
-                   max_filter_iter: int = 50,
-                   verbose: bool = True) -> OccBinSMCResults:
+def estimate_occbin(
+    model_M1: DSGEModel,
+    model_M2: DSGEModel,
+    constraint: OccBinConstraint,
+    data: np.ndarray,
+    n_particles: int = 1000,
+    n_mh_steps: int = 1,
+    max_filter_iter: int = 50,
+    verbose: bool = True,
+) -> OccBinSMCResults:
     """
     Estimate OccBin DSGE model using SMC.
 
@@ -311,7 +322,7 @@ def estimate_occbin(model_M1: DSGEModel,
     verbose : bool
         Print progress
 
-    Returns
+    Returns:
     -------
     OccBinSMCResults
         Estimation results with OccBin diagnostics
@@ -321,6 +332,6 @@ def estimate_occbin(model_M1: DSGEModel,
         model_M2=model_M2,
         constraint=constraint,
         n_particles=n_particles,
-        max_filter_iter=max_filter_iter
+        max_filter_iter=max_filter_iter,
     )
     return sampler.sample(data, n_mh_steps=n_mh_steps, verbose=verbose)

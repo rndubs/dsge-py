@@ -1,18 +1,17 @@
-"""
-Forecasting functions for DSGE models.
-"""
+"""Forecasting functions for DSGE models."""
+
+from dataclasses import dataclass
 
 import numpy as np
-from typing import Optional, Tuple, Dict
-from dataclasses import dataclass
 
 
 @dataclass
 class ForecastResult:
     """Container for forecast results."""
+
     mean: np.ndarray
-    bands: Optional[Dict[float, Tuple[np.ndarray, np.ndarray]]] = None
-    paths: Optional[np.ndarray] = None
+    bands: dict[float, tuple[np.ndarray, np.ndarray]] | None = None
+    paths: np.ndarray | None = None
 
 
 def forecast_states(
@@ -22,8 +21,8 @@ def forecast_states(
     x_T: np.ndarray,
     horizon: int,
     n_paths: int = 1000,
-    shock_cov: Optional[np.ndarray] = None,
-    seed: Optional[int] = None
+    shock_cov: np.ndarray | None = None,
+    seed: int | None = None,
 ) -> ForecastResult:
     """
     Forecast state variables from a DSGE model.
@@ -47,7 +46,7 @@ def forecast_states(
     seed : int, optional
         Random seed for reproducibility
 
-    Returns
+    Returns:
     -------
     ForecastResult
         Forecast results with mean, bands, and paths
@@ -63,9 +62,7 @@ def forecast_states(
 
     # Generate shock paths
     shocks = np.random.multivariate_normal(
-        mean=np.zeros(n_shocks),
-        cov=shock_cov,
-        size=(n_paths, horizon)
+        mean=np.zeros(n_shocks), cov=shock_cov, size=(n_paths, horizon)
     )
 
     # Simulate paths
@@ -94,11 +91,7 @@ def forecast_states(
         0.68: (bands[0.16], bands[0.84]),
     }
 
-    return ForecastResult(
-        mean=mean_forecast,
-        bands=band_dict,
-        paths=paths
-    )
+    return ForecastResult(mean=mean_forecast, bands=band_dict, paths=paths)
 
 
 def forecast_observables(
@@ -110,9 +103,9 @@ def forecast_observables(
     x_T: np.ndarray,
     horizon: int,
     n_paths: int = 1000,
-    shock_cov: Optional[np.ndarray] = None,
-    measurement_cov: Optional[np.ndarray] = None,
-    seed: Optional[int] = None
+    shock_cov: np.ndarray | None = None,
+    measurement_cov: np.ndarray | None = None,
+    seed: int | None = None,
 ) -> ForecastResult:
     """
     Forecast observable variables from a DSGE model.
@@ -138,20 +131,21 @@ def forecast_observables(
     seed : int, optional
         Random seed
 
-    Returns
+    Returns:
     -------
     ForecastResult
         Observable forecast with uncertainty
     """
     # Forecast states
-    state_forecast = forecast_states(
-        T, R, C, x_T, horizon, n_paths, shock_cov, seed
-    )
+    state_forecast = forecast_states(T, R, C, x_T, horizon, n_paths, shock_cov, seed)
 
     n_obs = Z.shape[0]
 
     # Convert state paths to observable paths
     obs_paths = np.zeros((n_paths, horizon, n_obs))
+
+    # Ensure paths are available (they will be since forecast_states always returns paths)
+    assert state_forecast.paths is not None, "State forecast paths should not be None"
 
     for i in range(n_paths):
         for h in range(horizon):
@@ -159,9 +153,7 @@ def forecast_observables(
 
             # Add measurement error if specified
             if measurement_cov is not None:
-                obs_paths[i, h] += np.random.multivariate_normal(
-                    np.zeros(n_obs), measurement_cov
-                )
+                obs_paths[i, h] += np.random.multivariate_normal(np.zeros(n_obs), measurement_cov)
 
     # Compute statistics
     mean_forecast = np.mean(obs_paths, axis=0)
@@ -177,11 +169,7 @@ def forecast_observables(
         0.68: (bands[0.16], bands[0.84]),
     }
 
-    return ForecastResult(
-        mean=mean_forecast,
-        bands=band_dict,
-        paths=obs_paths
-    )
+    return ForecastResult(mean=mean_forecast, bands=band_dict, paths=obs_paths)
 
 
 def conditional_forecast(
@@ -192,10 +180,10 @@ def conditional_forecast(
     D: np.ndarray,
     x_T: np.ndarray,
     horizon: int,
-    conditions: Dict[int, Dict[int, float]],
+    conditions: dict[int, dict[int, float]],
     n_paths: int = 1000,
-    shock_cov: Optional[np.ndarray] = None,
-    seed: Optional[int] = None
+    shock_cov: np.ndarray | None = None,
+    seed: int | None = None,
 ) -> ForecastResult:
     """
     Generate conditional forecasts with specified observable paths.
@@ -222,12 +210,12 @@ def conditional_forecast(
     seed : int, optional
         Random seed
 
-    Returns
+    Returns:
     -------
     ForecastResult
         Conditional forecast results
 
-    Notes
+    Notes:
     -----
     This uses a simple rejection sampling approach. For more efficient
     conditional forecasting, use the Kalman smoother or
@@ -245,6 +233,9 @@ def conditional_forecast(
     tolerance = 0.01  # Allow small deviation from conditions
 
     valid_paths = []
+
+    # Ensure paths are available
+    assert unconditional.paths is not None, "Unconditional forecast paths should not be None"
 
     for i in range(unconditional.paths.shape[0]):
         path = unconditional.paths[i]
@@ -269,9 +260,9 @@ def conditional_forecast(
             break
 
     if len(valid_paths) == 0:
+        msg = "No paths satisfy the conditions. Try relaxing constraints or increasing tolerance."
         raise ValueError(
-            "No paths satisfy the conditions. Try relaxing constraints or "
-            "increasing tolerance."
+            msg
         )
 
     # Convert to array
@@ -291,17 +282,12 @@ def conditional_forecast(
         0.68: (bands[0.16], bands[0.84]),
     }
 
-    return ForecastResult(
-        mean=mean_forecast,
-        bands=band_dict,
-        paths=valid_paths
-    )
+    return ForecastResult(mean=mean_forecast, bands=band_dict, paths=valid_paths)
 
 
 def compute_forecast_bands(
-    forecast_paths: np.ndarray,
-    confidence_levels: list = [0.68, 0.90, 0.95]
-) -> Dict[float, Tuple[np.ndarray, np.ndarray]]:
+    forecast_paths: np.ndarray, confidence_levels: list | None = None
+) -> dict[float, tuple[np.ndarray, np.ndarray]]:
     """
     Compute forecast uncertainty bands from simulation paths.
 
@@ -312,11 +298,13 @@ def compute_forecast_bands(
     confidence_levels : list
         Confidence levels for bands (e.g., [0.68, 0.90, 0.95])
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary mapping confidence levels to (lower, upper) bands
     """
+    if confidence_levels is None:
+        confidence_levels = [0.68, 0.9, 0.95]
     bands = {}
 
     for level in confidence_levels:
@@ -340,7 +328,7 @@ def forecast_from_posterior(
     horizon: int,
     n_forecast_paths: int = 100,
     n_posterior_draws: int = 100,
-    seed: Optional[int] = None
+    seed: int | None = None,
 ) -> ForecastResult:
     """
     Generate forecasts incorporating parameter uncertainty from posterior.
@@ -364,7 +352,7 @@ def forecast_from_posterior(
     seed : int, optional
         Random seed
 
-    Returns
+    Returns:
     -------
     ForecastResult
         Forecast incorporating parameter uncertainty
@@ -376,7 +364,7 @@ def forecast_from_posterior(
     indices = np.random.choice(
         len(posterior_samples),
         size=n_posterior_draws,
-        p=posterior_weights / np.sum(posterior_weights)
+        p=posterior_weights / np.sum(posterior_weights),
     )
 
     param_draws = posterior_samples[indices]
@@ -390,12 +378,12 @@ def forecast_from_posterior(
 
         mats = model.system_matrices(params)
 
-        solution, info = solve_linear_model(
-            Gamma0=mats['Gamma0'],
-            Gamma1=mats['Gamma1'],
-            Psi=mats['Psi'],
-            Pi=mats['Pi'],
-            n_states=model.spec.n_states
+        solution, _info = solve_linear_model(
+            Gamma0=mats["Gamma0"],
+            Gamma1=mats["Gamma1"],
+            Psi=mats["Psi"],
+            Pi=mats["Pi"],
+            n_states=model.spec.n_states,
         )
 
         if solution is None:
@@ -414,7 +402,7 @@ def forecast_from_posterior(
             x_T=x_T,
             horizon=horizon,
             n_paths=n_forecast_paths,
-            seed=seed + i if seed is not None else None
+            seed=seed + i if seed is not None else None,
         )
 
         all_paths.append(forecast.paths)
@@ -427,8 +415,4 @@ def forecast_from_posterior(
 
     bands = compute_forecast_bands(combined_paths)
 
-    return ForecastResult(
-        mean=mean_forecast,
-        bands=bands,
-        paths=combined_paths
-    )
+    return ForecastResult(mean=mean_forecast, bands=bands, paths=combined_paths)

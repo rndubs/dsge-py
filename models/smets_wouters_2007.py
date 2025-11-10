@@ -1,5 +1,5 @@
 """
-Smets-Wouters (2007) DSGE Model
+Smets-Wouters (2007) DSGE Model.
 
 Translation of the Smets-Wouters (2007) "Shocks and Frictions in US Business Cycles"
 model to the dsge-py framework.
@@ -12,11 +12,11 @@ Based on Dynare implementation by Johannes Pfeifer:
 https://github.com/JohannesPfeifer/DSGE_mod/blob/master/Smets_Wouters_2007/
 """
 
+
 import numpy as np
-from typing import Dict, Optional, Tuple
 
 from dsge.models.base import DSGEModel, ModelSpecification
-from dsge.models.parameters import Parameter, ParameterSet, Prior
+from dsge.models.parameters import Parameter, Prior
 
 
 class SmetsWouters2007(DSGEModel):
@@ -48,14 +48,13 @@ class SmetsWouters2007(DSGEModel):
     - labobs: Hours worked
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Smets-Wouters 2007 model."""
-
         # State dimensions
         n_sticky = 13  # Sticky price economy variables
-        n_flex = 11    # Flexible price economy variables
-        n_lags = 8     # Lags needed for dynamics
-        n_shocks = 7   # Structural shocks
+        n_flex = 11  # Flexible price economy variables
+        n_lags = 8  # Lags needed for dynamics
+        n_shocks = 7  # Structural shocks
         n_ma_lags = 2  # MA lags for price/wage markup shocks
 
         n_states = n_sticky + n_flex + n_lags + n_shocks + n_ma_lags  # 41 total
@@ -66,35 +65,71 @@ class SmetsWouters2007(DSGEModel):
         # State names
         state_names = [
             # Sticky price economy (13)
-            'c', 'inve', 'y', 'lab', 'k', 'pk', 'zcap', 'rk', 'w', 'r', 'pinf', 'mc', 'kp',
+            "c",
+            "inve",
+            "y",
+            "lab",
+            "k",
+            "pk",
+            "zcap",
+            "rk",
+            "w",
+            "r",
+            "pinf",
+            "mc",
+            "kp",
             # Flexible price economy (11)
-            'cf', 'invef', 'yf', 'labf', 'kf', 'pkf', 'zcapf', 'rkf', 'wf', 'rrf', 'kpf',
+            "cf",
+            "invef",
+            "yf",
+            "labf",
+            "kf",
+            "pkf",
+            "zcapf",
+            "rkf",
+            "wf",
+            "rrf",
+            "kpf",
             # Lags (8)
-            'c_lag', 'inve_lag', 'y_lag', 'w_lag', 'r_lag', 'pinf_lag', 'kp_lag', 'kpf_lag',
+            "c_lag",
+            "inve_lag",
+            "y_lag",
+            "w_lag",
+            "r_lag",
+            "pinf_lag",
+            "kp_lag",
+            "kpf_lag",
             # Shocks (7)
-            'a', 'b', 'g', 'qs', 'ms', 'spinf', 'sw',
+            "a",
+            "b",
+            "g",
+            "qs",
+            "ms",
+            "spinf",
+            "sw",
             # MA auxiliary lags (2)
-            'epinfma_lag', 'ewma_lag'
+            "epinfma_lag",
+            "ewma_lag",
         ]
 
         shock_names = [
-            'ea',      # Productivity shock
-            'eb',      # Risk premium shock
-            'eg',      # Government spending shock
-            'eqs',     # Investment-specific technology shock
-            'em',      # Monetary policy shock
-            'epinf',   # Price markup shock
-            'ew'       # Wage markup shock
+            "ea",  # Productivity shock
+            "eb",  # Risk premium shock
+            "eg",  # Government spending shock
+            "eqs",  # Investment-specific technology shock
+            "em",  # Monetary policy shock
+            "epinf",  # Price markup shock
+            "ew",  # Wage markup shock
         ]
 
         observable_names = [
-            'obs_dy',       # Output growth
-            'obs_dc',       # Consumption growth
-            'obs_dinve',    # Investment growth
-            'obs_dw',       # Wage growth
-            'obs_pinfobs',  # Inflation
-            'obs_robs',     # Federal funds rate
-            'obs_labobs'    # Hours worked
+            "obs_dy",  # Output growth
+            "obs_dc",  # Consumption growth
+            "obs_dinve",  # Investment growth
+            "obs_dw",  # Wage growth
+            "obs_pinfobs",  # Inflation
+            "obs_robs",  # Federal funds rate
+            "obs_labobs",  # Hours worked
         ]
 
         spec = ModelSpecification(
@@ -105,386 +140,459 @@ class SmetsWouters2007(DSGEModel):
             state_names=state_names,
             control_names=[],
             shock_names=shock_names,
-            observable_names=observable_names
+            observable_names=observable_names,
         )
 
         super().__init__(spec)
 
-    def _setup_parameters(self):
+    def _setup_parameters(self) -> None:
         """Define all model parameters with priors."""
 
         # Helper function for prior conversion
         def make_prior(dist_type, mean_val, std_val):
             """Convert distribution specifications to Prior objects."""
-            if dist_type == 'normal':
-                return Prior('normal', {'mean': mean_val, 'std': std_val})
-            elif dist_type == 'beta':
+            if dist_type == "normal":
+                return Prior("normal", {"mean": mean_val, "std": std_val})
+            if dist_type == "beta":
                 v = std_val**2
                 alpha = mean_val * (mean_val * (1 - mean_val) / v - 1)
                 beta = (1 - mean_val) * (mean_val * (1 - mean_val) / v - 1)
-                return Prior('beta', {'alpha': alpha, 'beta': beta})
-            elif dist_type == 'gamma':
+                return Prior("beta", {"alpha": alpha, "beta": beta})
+            if dist_type == "gamma":
                 v = std_val**2
                 shape = mean_val**2 / v
                 rate = mean_val / v
-                return Prior('gamma', {'shape': shape, 'rate': rate})
-            elif dist_type == 'invgamma':
+                return Prior("gamma", {"shape": shape, "rate": rate})
+            if dist_type == "invgamma":
                 shape = 2.0
                 scale = mean_val * (shape + 1)
-                return Prior('invgamma', {'shape': shape, 'scale': scale})
-            else:
-                raise ValueError(f"Unknown distribution type: {dist_type}")
+                return Prior("invgamma", {"shape": shape, "scale": scale})
+            msg = f"Unknown distribution type: {dist_type}"
+            raise ValueError(msg)
 
         # ==================================================================
         # STRUCTURAL PARAMETERS (Estimated in original paper)
         # ==================================================================
 
         # Preferences
-        self.parameters.add(Parameter(
-            name='csigma',
-            value=1.5,
-            prior=make_prior('normal', 1.50, 0.375),
-            fixed=False,
-            description='Risk aversion parameter'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="csigma",
+                value=1.5,
+                prior=make_prior("normal", 1.50, 0.375),
+                fixed=False,
+                description="Risk aversion parameter",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='chabb',
-            value=0.6361,
-            prior=make_prior('beta', 0.70, 0.10),
-            fixed=False,
-            description='External habit degree'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="chabb",
+                value=0.6361,
+                prior=make_prior("beta", 0.70, 0.10),
+                fixed=False,
+                description="External habit degree",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='csigl',
-            value=1.9423,
-            prior=make_prior('normal', 2.00, 0.75),
-            fixed=False,
-            description='Inverse Frisch elasticity of labor supply'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="csigl",
+                value=1.9423,
+                prior=make_prior("normal", 2.00, 0.75),
+                fixed=False,
+                description="Inverse Frisch elasticity of labor supply",
+            )
+        )
 
         # Technology
-        self.parameters.add(Parameter(
-            name='calfa',
-            value=0.24,
-            prior=make_prior('normal', 0.30, 0.05),
-            fixed=False,
-            description='Capital share in production'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="calfa",
+                value=0.24,
+                prior=make_prior("normal", 0.30, 0.05),
+                fixed=False,
+                description="Capital share in production",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='csadjcost',
-            value=6.0144,
-            prior=make_prior('normal', 4.00, 1.50),
-            fixed=False,
-            description='Investment adjustment cost'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="csadjcost",
+                value=6.0144,
+                prior=make_prior("normal", 4.00, 1.50),
+                fixed=False,
+                description="Investment adjustment cost",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='czcap',
-            value=0.2696,
-            prior=make_prior('beta', 0.50, 0.15),
-            fixed=False,
-            description='Capacity utilization cost parameter'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="czcap",
+                value=0.2696,
+                prior=make_prior("beta", 0.50, 0.15),
+                fixed=False,
+                description="Capacity utilization cost parameter",
+            )
+        )
 
         # Price and wage setting
-        self.parameters.add(Parameter(
-            name='cprobp',
-            value=0.6,
-            prior=make_prior('beta', 0.50, 0.10),
-            fixed=False,
-            description='Calvo parameter for prices'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cprobp",
+                value=0.6,
+                prior=make_prior("beta", 0.50, 0.10),
+                fixed=False,
+                description="Calvo parameter for prices",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cindp',
-            value=0.47,
-            prior=make_prior('beta', 0.50, 0.15),
-            fixed=False,
-            description='Indexation to past inflation (prices)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cindp",
+                value=0.47,
+                prior=make_prior("beta", 0.50, 0.15),
+                fixed=False,
+                description="Indexation to past inflation (prices)",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cprobw',
-            value=0.8087,
-            prior=make_prior('beta', 0.50, 0.10),
-            fixed=False,
-            description='Calvo parameter for wages'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cprobw",
+                value=0.8087,
+                prior=make_prior("beta", 0.50, 0.10),
+                fixed=False,
+                description="Calvo parameter for wages",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cindw',
-            value=0.3243,
-            prior=make_prior('beta', 0.50, 0.15),
-            fixed=False,
-            description='Indexation to past inflation (wages)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cindw",
+                value=0.3243,
+                prior=make_prior("beta", 0.50, 0.15),
+                fixed=False,
+                description="Indexation to past inflation (wages)",
+            )
+        )
 
         # Policy rule
-        self.parameters.add(Parameter(
-            name='crpi',
-            value=1.488,
-            prior=make_prior('normal', 1.50, 0.25),
-            fixed=False,
-            description='Taylor rule: response to inflation'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crpi",
+                value=1.488,
+                prior=make_prior("normal", 1.50, 0.25),
+                fixed=False,
+                description="Taylor rule: response to inflation",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crr',
-            value=0.8762,
-            prior=make_prior('beta', 0.75, 0.10),
-            fixed=False,
-            description='Interest rate smoothing'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crr",
+                value=0.8762,
+                prior=make_prior("beta", 0.75, 0.10),
+                fixed=False,
+                description="Interest rate smoothing",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cry',
-            value=0.0593,
-            prior=make_prior('normal', 0.125, 0.05),
-            fixed=False,
-            description='Taylor rule: response to output gap'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cry",
+                value=0.0593,
+                prior=make_prior("normal", 0.125, 0.05),
+                fixed=False,
+                description="Taylor rule: response to output gap",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crdy',
-            value=0.2347,
-            prior=make_prior('normal', 0.125, 0.05),
-            fixed=False,
-            description='Taylor rule: response to output growth'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crdy",
+                value=0.2347,
+                prior=make_prior("normal", 0.125, 0.05),
+                fixed=False,
+                description="Taylor rule: response to output growth",
+            )
+        )
 
         # Shock persistence
-        self.parameters.add(Parameter(
-            name='crhoa',
-            value=0.9977,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) productivity shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhoa",
+                value=0.9977,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) productivity shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhob',
-            value=0.5799,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) risk premium shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhob",
+                value=0.5799,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) risk premium shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhog',
-            value=0.9957,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) government spending shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhog",
+                value=0.9957,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) government spending shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhoqs',
-            value=0.7165,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) investment shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhoqs",
+                value=0.7165,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) investment shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhoms',
-            value=0.0,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) monetary policy shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhoms",
+                value=0.0,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) monetary policy shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhopinf',
-            value=0.0,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) price markup shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhopinf",
+                value=0.0,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) price markup shock persistence",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='crhow',
-            value=0.0,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='AR(1) wage markup shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="crhow",
+                value=0.0,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="AR(1) wage markup shock persistence",
+            )
+        )
 
         # MA components for markup shocks
-        self.parameters.add(Parameter(
-            name='cmap',
-            value=0.0,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='MA coefficient for price markup shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cmap",
+                value=0.0,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="MA coefficient for price markup shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cmaw',
-            value=0.0,
-            prior=make_prior('beta', 0.50, 0.20),
-            fixed=False,
-            description='MA coefficient for wage markup shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cmaw",
+                value=0.0,
+                prior=make_prior("beta", 0.50, 0.20),
+                fixed=False,
+                description="MA coefficient for wage markup shock",
+            )
+        )
 
         # Technology spillover
-        self.parameters.add(Parameter(
-            name='cgy',
-            value=0.51,
-            fixed=True,
-            description='Feedback from technology to government spending'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cgy",
+                value=0.51,
+                fixed=True,
+                description="Feedback from technology to government spending",
+            )
+        )
 
         # Shock standard deviations
-        self.parameters.add(Parameter(
-            name='sigma_ea',
-            value=0.45,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of productivity shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_ea",
+                value=0.45,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of productivity shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_eb',
-            value=0.24,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of risk premium shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_eb",
+                value=0.24,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of risk premium shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_eg',
-            value=0.52,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of government spending shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_eg",
+                value=0.52,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of government spending shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_eqs',
-            value=0.45,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of investment shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_eqs",
+                value=0.45,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of investment shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_em',
-            value=0.24,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of monetary policy shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_em",
+                value=0.24,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of monetary policy shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_epinf',
-            value=0.14,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of price markup shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_epinf",
+                value=0.14,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of price markup shock",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_ew',
-            value=0.24,
-            prior=make_prior('invgamma', 0.10, 2.0),
-            fixed=False,
-            description='Std dev of wage markup shock'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_ew",
+                value=0.24,
+                prior=make_prior("invgamma", 0.10, 2.0),
+                fixed=False,
+                description="Std dev of wage markup shock",
+            )
+        )
 
         # ==================================================================
         # FIXED PARAMETERS (Calibrated)
         # ==================================================================
 
-        self.parameters.add(Parameter(
-            name='ctou',
-            value=0.025,
-            fixed=True,
-            description='Depreciation rate (quarterly)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="ctou", value=0.025, fixed=True, description="Depreciation rate (quarterly)"
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='clandaw',
-            value=1.5,
-            fixed=True,
-            description='Gross markup in labor market'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="clandaw", value=1.5, fixed=True, description="Gross markup in labor market"
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cg',
-            value=0.18,
-            fixed=True,
-            description='Steady-state exogenous spending share'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cg",
+                value=0.18,
+                fixed=True,
+                description="Steady-state exogenous spending share",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='curvp',
-            value=10.0,
-            fixed=True,
-            description='Kimball aggregator curvature for prices'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="curvp",
+                value=10.0,
+                fixed=True,
+                description="Kimball aggregator curvature for prices",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='curvw',
-            value=10.0,
-            fixed=True,
-            description='Kimball aggregator curvature for wages'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="curvw",
+                value=10.0,
+                fixed=True,
+                description="Kimball aggregator curvature for wages",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='cfc',
-            value=1.5,
-            fixed=True,
-            description='Fixed cost share (ensures zero profits in SS)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="cfc",
+                value=1.5,
+                fixed=True,
+                description="Fixed cost share (ensures zero profits in SS)",
+            )
+        )
 
         # Steady-state values
-        self.parameters.add(Parameter(
-            name='constepinf',
-            value=0.7,
-            fixed=True,
-            description='Steady-state quarterly inflation rate (%)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="constepinf",
+                value=0.7,
+                fixed=True,
+                description="Steady-state quarterly inflation rate (%)",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='constebeta',
-            value=0.7420,
-            fixed=True,
-            description='Quarterly time preference rate (%)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="constebeta",
+                value=0.7420,
+                fixed=True,
+                description="Quarterly time preference rate (%)",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='constelab',
-            value=0.0,
-            fixed=True,
-            description='Steady-state hours worked (log deviation)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="constelab",
+                value=0.0,
+                fixed=True,
+                description="Steady-state hours worked (log deviation)",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='ctrend',
-            value=0.3982,
-            fixed=True,
-            description='Quarterly net growth rate (%)'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="ctrend", value=0.3982, fixed=True, description="Quarterly net growth rate (%)"
+            )
+        )
 
-    def _compute_steady_state_params(self, params: Dict[str, float]) -> Dict[str, float]:
+    def _compute_steady_state_params(self, params: dict[str, float]) -> dict[str, float]:
         """
         Compute derived parameters based on steady-state relationships.
 
         These parameters depend on structural parameters and ensure steady-state consistency.
         """
         # Extract needed parameters
-        ctou = params['ctou']
-        calfa = params['calfa']
-        clandaw = params['clandaw']
-        cg = params['cg']
-        constepinf = params['constepinf']
-        constebeta = params['constebeta']
-        ctrend = params['ctrend']
-        csigma = params['csigma']
-        cfc = params['cfc']
+        ctou = params["ctou"]
+        calfa = params["calfa"]
+        clandaw = params["clandaw"]
+        cg = params["cg"]
+        constepinf = params["constepinf"]
+        constebeta = params["constebeta"]
+        ctrend = params["ctrend"]
+        csigma = params["csigma"]
+        cfc = params["cfc"]
 
         # Gross inflation and growth
         cpie = 1 + constepinf / 100
@@ -492,29 +600,31 @@ class SmetsWouters2007(DSGEModel):
         cbeta = 1 / (1 + constebeta / 100)
 
         # Growth-adjusted discount factor
-        cbetabar = cbeta * cgamma**(-csigma)
+        cbetabar = cbeta * cgamma ** (-csigma)
 
         # Steady-state real interest rate
-        cr = cpie / (cbeta * cgamma**(-csigma))
+        cr = cpie / (cbeta * cgamma ** (-csigma))
 
         # Steady-state rental rate of capital
-        crk = (cbeta**(-1)) * (cgamma**csigma) - (1 - ctou)
+        crk = (cbeta ** (-1)) * (cgamma**csigma) - (1 - ctou)
 
         # Gross price markup (derived from technology)
         clandap = cfc  # In SW2007, fixed cost ensures zero profits
 
         # Steady-state wage
-        cw = (calfa**calfa * (1 - calfa)**(1 - calfa) / (clandap * crk**calfa))**(1 / (1 - calfa))
+        cw = (calfa**calfa * (1 - calfa) ** (1 - calfa) / (clandap * crk**calfa)) ** (
+            1 / (1 - calfa)
+        )
 
         # Investment-capital ratio
-        cikbar = (1 - (1 - ctou) / cgamma)
+        cikbar = 1 - (1 - ctou) / cgamma
         cik = (1 - (1 - ctou) / cgamma) * cgamma
 
         # Labor-capital ratio
         clk = ((1 - calfa) / calfa) * (crk / cw)
 
         # Capital-output ratio
-        cky = cfc * (clk)**(calfa - 1)
+        cky = cfc * (clk) ** (calfa - 1)
 
         # Investment-output and consumption-output ratios
         ciy = cik * cky
@@ -530,29 +640,28 @@ class SmetsWouters2007(DSGEModel):
         conster = (cr - 1) * 100
 
         # Return all derived parameters
-        derived = {
-            'cpie': cpie,
-            'cgamma': cgamma,
-            'cbeta': cbeta,
-            'cbetabar': cbetabar,
-            'cr': cr,
-            'crk': crk,
-            'clandap': clandap,
-            'cw': cw,
-            'cikbar': cikbar,
-            'cik': cik,
-            'clk': clk,
-            'cky': cky,
-            'ciy': ciy,
-            'ccy': ccy,
-            'crkky': crkky,
-            'cwhlc': cwhlc,
-            'conster': conster
+        return {
+            "cpie": cpie,
+            "cgamma": cgamma,
+            "cbeta": cbeta,
+            "cbetabar": cbetabar,
+            "cr": cr,
+            "crk": crk,
+            "clandap": clandap,
+            "cw": cw,
+            "cikbar": cikbar,
+            "cik": cik,
+            "clk": clk,
+            "cky": cky,
+            "ciy": ciy,
+            "ccy": ccy,
+            "crkky": crkky,
+            "cwhlc": cwhlc,
+            "conster": conster,
         }
 
-        return derived
 
-    def system_matrices(self, params: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
+    def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """
         Compute linearized system matrices for the Smets-Wouters model.
 
@@ -567,63 +676,63 @@ class SmetsWouters2007(DSGEModel):
         else:
             # Convert array to dict if needed
             param_names = [param.name for param in self.parameters.parameters]
-            p = {name: val for name, val in zip(param_names, params)}
+            p = dict(zip(param_names, params, strict=False))
 
         # Compute derived steady-state parameters
         derived = self._compute_steady_state_params(p)
         p.update(derived)  # Add derived parameters to parameter dict
 
         # Extract commonly used parameters
-        calfa = p['calfa']
-        cbetabar = p['cbetabar']
-        cgamma = p['cgamma']
-        chabb = p['chabb']
-        csigma = p['csigma']
-        csadjcost = p['csadjcost']
-        csigl = p['csigl']
-        czcap = p['czcap']
-        cprobp = p['cprobp']
-        cprobw = p['cprobw']
-        cindp = p['cindp']
-        cindw = p['cindw']
-        cfc = p['cfc']
-        curvp = p['curvp']
-        curvw = p['curvw']
-        clandaw = p['clandaw']
-        crr = p['crr']
-        crpi = p['crpi']
-        cry = p['cry']
-        crdy = p['crdy']
-        crhoa = p['crhoa']
-        crhob = p['crhob']
-        crhog = p['crhog']
-        crhoqs = p['crhoqs']
-        crhoms = p['crhoms']
-        crhopinf = p['crhopinf']
-        crhow = p['crhow']
-        cmap = p['cmap']
-        cmaw = p['cmaw']
-        cgy = p['cgy']
-        ctou = p['ctou']
+        calfa = p["calfa"]
+        cbetabar = p["cbetabar"]
+        cgamma = p["cgamma"]
+        chabb = p["chabb"]
+        csigma = p["csigma"]
+        csadjcost = p["csadjcost"]
+        csigl = p["csigl"]
+        czcap = p["czcap"]
+        cprobp = p["cprobp"]
+        cprobw = p["cprobw"]
+        cindp = p["cindp"]
+        cindw = p["cindw"]
+        cfc = p["cfc"]
+        curvp = p["curvp"]
+        curvw = p["curvw"]
+        clandaw = p["clandaw"]
+        crr = p["crr"]
+        crpi = p["crpi"]
+        cry = p["cry"]
+        crdy = p["crdy"]
+        crhoa = p["crhoa"]
+        crhob = p["crhob"]
+        crhog = p["crhog"]
+        crhoqs = p["crhoqs"]
+        crhoms = p["crhoms"]
+        crhopinf = p["crhopinf"]
+        crhow = p["crhow"]
+        cmap = p["cmap"]
+        cmaw = p["cmaw"]
+        cgy = p["cgy"]
+        ctou = p["ctou"]
 
         # Derived parameters
-        crk = p['crk']
-        cw = p['cw']
-        cikbar = p['cikbar']
-        cky = p['cky']
-        ciy = p['ciy']
-        ccy = p['ccy']
-        crkky = p['crkky']
-        cwhlc = p['cwhlc']
+        crk = p["crk"]
+        p["cw"]
+        cikbar = p["cikbar"]
+        p["cky"]
+        ciy = p["ciy"]
+        ccy = p["ccy"]
+        crkky = p["crkky"]
+        cwhlc = p["cwhlc"]
 
         # Shock standard deviations
-        sigma_ea = p['sigma_ea']
-        sigma_eb = p['sigma_eb']
-        sigma_eg = p['sigma_eg']
-        sigma_eqs = p['sigma_eqs']
-        sigma_em = p['sigma_em']
-        sigma_epinf = p['sigma_epinf']
-        sigma_ew = p['sigma_ew']
+        sigma_ea = p["sigma_ea"]
+        sigma_eb = p["sigma_eb"]
+        sigma_eg = p["sigma_eg"]
+        sigma_eqs = p["sigma_eqs"]
+        sigma_em = p["sigma_em"]
+        sigma_epinf = p["sigma_epinf"]
+        sigma_ew = p["sigma_ew"]
 
         # Matrix dimensions
         n = self.spec.n_states  # 41
@@ -675,7 +784,6 @@ class SmetsWouters2007(DSGEModel):
         idx_eta_w = 7
         idx_eta_pk = 8
         idx_eta_rk = 9
-        idx_eta_y = 10
         idx_eta_labf = 11
         idx_eta_lab = 12
 
@@ -750,7 +858,7 @@ class SmetsWouters2007(DSGEModel):
         Gamma0[idx_yf, idx_yf] = 1.0
         Gamma0[idx_yf, idx_cf] = -ccy
         Gamma0[idx_yf, idx_invef] = -ciy
-        Gamma0[idx_yf, idx_g] = -p['cg']
+        Gamma0[idx_yf, idx_g] = -p["cg"]
         Gamma0[idx_yf, idx_zcapf] = -crkky
 
         # Equation 9: Production function (flexible)
@@ -806,7 +914,7 @@ class SmetsWouters2007(DSGEModel):
         Gamma0[idx_y, idx_y] = 1.0
         Gamma0[idx_y, idx_c] = -ccy
         Gamma0[idx_y, idx_inve] = -ciy
-        Gamma0[idx_y, idx_g] = -p['cg']
+        Gamma0[idx_y, idx_g] = -p["cg"]
         Gamma0[idx_y, idx_zcap] = -crkky
 
         # Equation 4: Production function (row 3: lab)
@@ -854,7 +962,9 @@ class SmetsWouters2007(DSGEModel):
         wage_pinf_lag = cindw / wage_denom
         wage_pinf_cur = -(1.0 + cbetabar * cgamma * cindw) / wage_denom
         wage_pinf_fwd = cbetabar * cgamma / wage_denom
-        wage_mrs_coef = ((1 - cprobw) * (1 - cbetabar * cgamma * cprobw) / (cprobw * wage_denom)) / ((clandaw - 1) * curvw + 1)
+        wage_mrs_coef = (
+            (1 - cprobw) * (1 - cbetabar * cgamma * cprobw) / (cprobw * wage_denom)
+        ) / ((clandaw - 1) * curvw + 1)
 
         Gamma0[idx_w, idx_w] = 1.0 + wage_mrs_coef
         Gamma0[idx_w, idx_lab] = -wage_mrs_coef * csigl
@@ -884,7 +994,11 @@ class SmetsWouters2007(DSGEModel):
         phillips_denom = 1.0 + cbetabar * cgamma * cindp
         phillips_fwd = cbetabar * cgamma / phillips_denom
         phillips_lag = cindp / phillips_denom
-        phillips_mc = ((1 - cprobp) * (1 - cbetabar * cgamma * cprobp) / cprobp) / ((cfc - 1) * curvp + 1) / phillips_denom
+        phillips_mc = (
+            ((1 - cprobp) * (1 - cbetabar * cgamma * cprobp) / cprobp)
+            / ((cfc - 1) * curvp + 1)
+            / phillips_denom
+        )
 
         Gamma0[idx_pinf, idx_pinf] = 1.0
         Gamma0[idx_pinf, idx_mc] = -phillips_mc
@@ -997,16 +1111,13 @@ class SmetsWouters2007(DSGEModel):
         Gamma0[idx_ewma_lag, idx_ewma_lag] = 1.0
         Psi[idx_ewma_lag, idx_ew] = sigma_ew
 
-        return {
-            'Gamma0': Gamma0,
-            'Gamma1': Gamma1,
-            'Psi': Psi,
-            'Pi': Pi
-        }
+        return {"Gamma0": Gamma0, "Gamma1": Gamma1, "Psi": Psi, "Pi": Pi}
 
-    def measurement_equation(self, params: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
+    def measurement_equation(
+        self, params: np.ndarray | None = None
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Measurement equation: observables = Z * states + D
+        Measurement equation: observables = Z * states + D.
 
         Returns:
             Z: (n_obs x n_states) measurement matrix
@@ -1017,16 +1128,16 @@ class SmetsWouters2007(DSGEModel):
             p = self.parameters.to_dict()
         else:
             param_names = [param.name for param in self.parameters.parameters]
-            p = {name: val for name, val in zip(param_names, params)}
+            p = dict(zip(param_names, params, strict=False))
 
         # Compute derived parameters
         derived = self._compute_steady_state_params(p)
         p.update(derived)
 
-        ctrend = p['ctrend']
-        constepinf = p['constepinf']
-        conster = p['conster']
-        constelab = p['constelab']
+        ctrend = p["ctrend"]
+        constepinf = p["constepinf"]
+        conster = p["conster"]
+        constelab = p["constelab"]
 
         n_obs = self.spec.n_observables
         n_states = self.spec.n_states
@@ -1083,7 +1194,7 @@ class SmetsWouters2007(DSGEModel):
 
         return Z, D
 
-    def steady_state(self, params: Optional[np.ndarray] = None) -> np.ndarray:
+    def steady_state(self, params: np.ndarray | None = None) -> np.ndarray:
         """
         Compute steady state (all zeros for log-linearized model).
 
@@ -1101,21 +1212,9 @@ def create_smets_wouters_model() -> SmetsWouters2007:
 if __name__ == "__main__":
     # Example usage
     model = create_smets_wouters_model()
-    print(f"Model: Smets-Wouters (2007)")
-    print(f"States: {model.spec.n_states}")
-    print(f"Shocks: {model.spec.n_shocks}")
-    print(f"Observables: {model.spec.n_observables}")
-    print(f"Parameters: {len(model.parameters)}")
 
     # Test system matrices
-    print("\nComputing system matrices...")
     mats = model.system_matrices()
-    print(f"Gamma0 shape: {mats['Gamma0'].shape}")
-    print(f"Gamma1 shape: {mats['Gamma1'].shape}")
-    print(f"Psi shape: {mats['Psi'].shape}")
-    print(f"Pi shape: {mats['Pi'].shape}")
 
     # Test measurement equation
     Z, D = model.measurement_equation()
-    print(f"\nZ shape: {Z.shape}")
-    print(f"D shape: {D.shape}")

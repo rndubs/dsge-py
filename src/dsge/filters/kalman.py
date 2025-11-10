@@ -5,9 +5,9 @@ Implements standard Kalman filtering and smoothing algorithms
 for likelihood evaluation and state inference in DSGE models.
 """
 
-import numpy as np
-from typing import Tuple, Optional
 from dataclasses import dataclass
+
+import numpy as np
 
 
 @dataclass
@@ -15,7 +15,7 @@ class KalmanFilter:
     """
     Results from Kalman filtering.
 
-    Attributes
+    Attributes:
     ----------
     log_likelihood : float
         Log likelihood of the data
@@ -32,6 +32,7 @@ class KalmanFilter:
     forecast_error_covariances : array (T x n_obs x n_obs)
         Forecast error covariance F_t
     """
+
     log_likelihood: float
     filtered_states: np.ndarray
     filtered_covariances: np.ndarray
@@ -41,15 +42,17 @@ class KalmanFilter:
     forecast_error_covariances: np.ndarray
 
 
-def kalman_filter(y: np.ndarray,
-                  T: np.ndarray,
-                  R: np.ndarray,
-                  Q: np.ndarray,
-                  Z: np.ndarray,
-                  D: np.ndarray,
-                  H: np.ndarray,
-                  a0: Optional[np.ndarray] = None,
-                  P0: Optional[np.ndarray] = None) -> KalmanFilter:
+def kalman_filter(
+    y: np.ndarray,
+    T: np.ndarray,
+    R: np.ndarray,
+    Q: np.ndarray,
+    Z: np.ndarray,
+    D: np.ndarray,
+    H: np.ndarray,
+    a0: np.ndarray | None = None,
+    P0: np.ndarray | None = None,
+) -> KalmanFilter:
     """
     Kalman filter for linear state space model.
 
@@ -77,7 +80,7 @@ def kalman_filter(y: np.ndarray,
     P0 : array (n_states x n_states), optional
         Initial state covariance. Default: solve Lyapunov equation
 
-    Returns
+    Returns:
     -------
     KalmanFilter
         Filtering results including log likelihood
@@ -147,9 +150,7 @@ def kalman_filter(y: np.ndarray,
                 if sign <= 0:
                     log_likelihood = -np.inf
                 else:
-                    log_likelihood += -0.5 * (n_obs * np.log(2 * np.pi) +
-                                             logdet +
-                                             v.T @ F_inv @ v)
+                    log_likelihood += -0.5 * (n_obs * np.log(2 * np.pi) + logdet + v.T @ F_inv @ v)
 
                 a = a_update
                 P = P_update
@@ -173,14 +174,13 @@ def kalman_filter(y: np.ndarray,
         predicted_states=predicted_states,
         predicted_covariances=predicted_covariances,
         forecast_errors=forecast_errors,
-        forecast_error_covariances=forecast_error_covariances
+        forecast_error_covariances=forecast_error_covariances,
     )
 
 
-def kalman_smoother(filter_results: KalmanFilter,
-                   T: np.ndarray,
-                   R: np.ndarray,
-                   Q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def kalman_smoother(
+    filter_results: KalmanFilter, T: np.ndarray, R: np.ndarray, Q: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Kalman smoother (Rauch-Tung-Striebel backward recursion).
 
@@ -197,7 +197,7 @@ def kalman_smoother(filter_results: KalmanFilter,
     Q : array (n_shocks x n_shocks)
         Shock covariance matrix
 
-    Returns
+    Returns:
     -------
     smoothed_states : array (T x n_states)
         Smoothed state estimates
@@ -240,7 +240,7 @@ def kalman_smoother(filter_results: KalmanFilter,
     return smoothed_states, smoothed_covariances
 
 
-def solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray, method: str = 'direct') -> np.ndarray:
+def solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray, method: str = "direct") -> np.ndarray:
     """
     Solve the discrete Lyapunov equation: X = A * X * A' + Q.
 
@@ -253,22 +253,23 @@ def solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray, method: str = 'direct'
     method : str
         Solution method ('direct' or 'iterative')
 
-    Returns
+    Returns:
     -------
     X : array (n x n)
         Solution to Lyapunov equation
     """
-    if method == 'direct':
+    if method == "direct":
         try:
             from scipy.linalg import solve_discrete_lyapunov as scipy_solve
+
             return scipy_solve(A, Q)
         except:
             # Fall back to iterative method
-            method = 'iterative'
+            method = "iterative"
 
-    if method == 'iterative':
+    if method == "iterative":
         # Iterative solution
-        n = A.shape[0]
+        A.shape[0]
         X = Q.copy()
         for _ in range(100):  # Max iterations
             X_new = A @ X @ A.T + Q
@@ -277,4 +278,5 @@ def solve_discrete_lyapunov(A: np.ndarray, Q: np.ndarray, method: str = 'direct'
             X = X_new
         return X
 
-    raise ValueError(f"Unknown method: {method}")
+    msg = f"Unknown method: {method}"
+    raise ValueError(msg)

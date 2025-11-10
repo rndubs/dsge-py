@@ -1,16 +1,15 @@
-"""
-Tests for the Smets-Wouters (2007) DSGE model implementation.
-"""
+"""Tests for the Smets-Wouters (2007) DSGE model implementation."""
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from models.smets_wouters_2007 import SmetsWouters2007, create_smets_wouters_model
+from models.smets_wouters_2007 import create_smets_wouters_model
 from src.dsge.solvers.linear import solve_linear_model
 
 
@@ -22,7 +21,7 @@ class TestSmetsWouters2007Model:
         """Create a Smets-Wouters model instance."""
         return create_smets_wouters_model()
 
-    def test_model_creation(self, model):
+    def test_model_creation(self, model) -> None:
         """Test that the model can be created with correct dimensions."""
         assert model.spec.n_states == 41
         assert model.spec.n_controls == 0
@@ -30,87 +29,128 @@ class TestSmetsWouters2007Model:
         assert model.spec.n_observables == 7
         assert len(model.parameters) == 41
 
-    def test_state_names(self, model):
+    def test_state_names(self, model) -> None:
         """Test that state names are correctly defined."""
         expected_states = [
             # Sticky price (13)
-            'c', 'inve', 'y', 'lab', 'k', 'pk', 'zcap', 'rk', 'w', 'r', 'pinf', 'mc', 'kp',
+            "c",
+            "inve",
+            "y",
+            "lab",
+            "k",
+            "pk",
+            "zcap",
+            "rk",
+            "w",
+            "r",
+            "pinf",
+            "mc",
+            "kp",
             # Flexible price (11)
-            'cf', 'invef', 'yf', 'labf', 'kf', 'pkf', 'zcapf', 'rkf', 'wf', 'rrf', 'kpf',
+            "cf",
+            "invef",
+            "yf",
+            "labf",
+            "kf",
+            "pkf",
+            "zcapf",
+            "rkf",
+            "wf",
+            "rrf",
+            "kpf",
             # Lags (8)
-            'c_lag', 'inve_lag', 'y_lag', 'w_lag', 'r_lag', 'pinf_lag', 'kp_lag', 'kpf_lag',
+            "c_lag",
+            "inve_lag",
+            "y_lag",
+            "w_lag",
+            "r_lag",
+            "pinf_lag",
+            "kp_lag",
+            "kpf_lag",
             # Shocks (7)
-            'a', 'b', 'g', 'qs', 'ms', 'spinf', 'sw',
+            "a",
+            "b",
+            "g",
+            "qs",
+            "ms",
+            "spinf",
+            "sw",
             # MA lags (2)
-            'epinfma_lag', 'ewma_lag'
+            "epinfma_lag",
+            "ewma_lag",
         ]
         assert model.spec.state_names == expected_states
 
-    def test_shock_names(self, model):
+    def test_shock_names(self, model) -> None:
         """Test that shock names are correctly defined."""
-        expected_shocks = ['ea', 'eb', 'eg', 'eqs', 'em', 'epinf', 'ew']
+        expected_shocks = ["ea", "eb", "eg", "eqs", "em", "epinf", "ew"]
         assert model.spec.shock_names == expected_shocks
 
-    def test_observable_names(self, model):
+    def test_observable_names(self, model) -> None:
         """Test that observable names are correctly defined."""
         expected_obs = [
-            'obs_dy', 'obs_dc', 'obs_dinve', 'obs_dw',
-            'obs_pinfobs', 'obs_robs', 'obs_labobs'
+            "obs_dy",
+            "obs_dc",
+            "obs_dinve",
+            "obs_dw",
+            "obs_pinfobs",
+            "obs_robs",
+            "obs_labobs",
         ]
         assert model.spec.observable_names == expected_obs
 
-    def test_parameter_count(self, model):
+    def test_parameter_count(self, model) -> None:
         """Test that all parameters are defined."""
         # Should have structural params + shock std devs + fixed params
         assert len(model.parameters) == 41
 
         # Check some key parameters exist
         param_dict = model.parameters.to_dict()
-        assert 'csigma' in param_dict
-        assert 'chabb' in param_dict
-        assert 'calfa' in param_dict
-        assert 'cprobp' in param_dict
-        assert 'cprobw' in param_dict
-        assert 'crpi' in param_dict
+        assert "csigma" in param_dict
+        assert "chabb" in param_dict
+        assert "calfa" in param_dict
+        assert "cprobp" in param_dict
+        assert "cprobw" in param_dict
+        assert "crpi" in param_dict
 
-    def test_system_matrices_shape(self, model):
+    def test_system_matrices_shape(self, model) -> None:
         """Test that system matrices have correct dimensions."""
         mats = model.system_matrices()
 
-        assert 'Gamma0' in mats
-        assert 'Gamma1' in mats
-        assert 'Psi' in mats
-        assert 'Pi' in mats
+        assert "Gamma0" in mats
+        assert "Gamma1" in mats
+        assert "Psi" in mats
+        assert "Pi" in mats
 
-        assert mats['Gamma0'].shape == (41, 41)
-        assert mats['Gamma1'].shape == (41, 41)
-        assert mats['Psi'].shape == (41, 7)
-        assert mats['Pi'].shape == (41, 13)  # Number of expectation errors
+        assert mats["Gamma0"].shape == (41, 41)
+        assert mats["Gamma1"].shape == (41, 41)
+        assert mats["Psi"].shape == (41, 7)
+        assert mats["Pi"].shape == (41, 13)  # Number of expectation errors
 
-    def test_system_matrices_not_all_zeros(self, model):
+    def test_system_matrices_not_all_zeros(self, model) -> None:
         """Test that system matrices are not trivially zero."""
         mats = model.system_matrices()
 
-        assert np.any(mats['Gamma0'] != 0)
-        assert np.any(mats['Gamma1'] != 0)
-        assert np.any(mats['Psi'] != 0)
+        assert np.any(mats["Gamma0"] != 0)
+        assert np.any(mats["Gamma1"] != 0)
+        assert np.any(mats["Psi"] != 0)
         # Pi may be sparse or zero depending on expectations
 
-    def test_measurement_equation_shape(self, model):
+    def test_measurement_equation_shape(self, model) -> None:
         """Test that measurement matrices have correct dimensions."""
         Z, D = model.measurement_equation()
 
         assert Z.shape == (7, 41)  # 7 observables, 41 states
         assert D.shape == (7,)
 
-    def test_measurement_equation_not_trivial(self, model):
+    def test_measurement_equation_not_trivial(self, model) -> None:
         """Test that measurement equation is not trivially zero."""
-        Z, D = model.measurement_equation()
+        Z, _D = model.measurement_equation()
 
         assert np.any(Z != 0)
         # D may be zero or non-zero depending on steady state
 
-    def test_steady_state(self, model):
+    def test_steady_state(self, model) -> None:
         """Test that steady state is computed."""
         ss = model.steady_state()
 
@@ -118,23 +158,23 @@ class TestSmetsWouters2007Model:
         # For log-linearized model, steady state should be all zeros
         assert np.allclose(ss, 0.0)
 
-    def test_solve_model(self, model):
+    def test_solve_model(self, model) -> None:
         """Test that the model can be solved."""
         mats = model.system_matrices()
 
         try:
-            solution, info = solve_linear_model(
-                Gamma0=mats['Gamma0'],
-                Gamma1=mats['Gamma1'],
-                Psi=mats['Psi'],
-                Pi=mats['Pi'],
-                n_states=model.spec.n_states
+            solution, _info = solve_linear_model(
+                Gamma0=mats["Gamma0"],
+                Gamma1=mats["Gamma1"],
+                Psi=mats["Psi"],
+                Pi=mats["Pi"],
+                n_states=model.spec.n_states,
             )
 
             # Check that solution has required attributes
-            assert hasattr(solution, 'T')
-            assert hasattr(solution, 'R')
-            assert hasattr(solution, 'C')
+            assert hasattr(solution, "T")
+            assert hasattr(solution, "R")
+            assert hasattr(solution, "C")
 
             # Check dimensions
             n_states = model.spec.n_states
@@ -154,16 +194,16 @@ class TestSmetsWouters2007Model:
         except Exception as e:
             pytest.fail(f"Model solution failed: {e}")
 
-    def test_simulation(self, model):
+    def test_simulation(self, model) -> None:
         """Test that the model can be simulated."""
         # Solve the model
         mats = model.system_matrices()
-        solution, info = solve_linear_model(
-            Gamma0=mats['Gamma0'],
-            Gamma1=mats['Gamma1'],
-            Psi=mats['Psi'],
-            Pi=mats['Pi'],
-            n_states=model.spec.n_states
+        solution, _info = solve_linear_model(
+            Gamma0=mats["Gamma0"],
+            Gamma1=mats["Gamma1"],
+            Psi=mats["Psi"],
+            Pi=mats["Pi"],
+            n_states=model.spec.n_states,
         )
 
         # Simulate
@@ -183,16 +223,16 @@ class TestSmetsWouters2007Model:
         assert np.all(np.isfinite(states))
         assert np.max(np.abs(states)) < 100  # Should stay bounded
 
-    def test_irfs(self, model):
+    def test_irfs(self, model) -> None:
         """Test impulse response functions."""
         # Solve the model
         mats = model.system_matrices()
-        solution, info = solve_linear_model(
-            Gamma0=mats['Gamma0'],
-            Gamma1=mats['Gamma1'],
-            Psi=mats['Psi'],
-            Pi=mats['Pi'],
-            n_states=model.spec.n_states
+        solution, _info = solve_linear_model(
+            Gamma0=mats["Gamma0"],
+            Gamma1=mats["Gamma1"],
+            Psi=mats["Psi"],
+            Pi=mats["Pi"],
+            n_states=model.spec.n_states,
         )
 
         # Compute IRF to productivity shock (shock index 0)
@@ -224,7 +264,7 @@ class TestSmetsWouters2007Model:
         late_variance = np.var(irf[-10:, :])
         assert late_variance < 1.0, f"IRF not stabilizing: late variance = {late_variance}"
 
-    def test_parameter_priors(self, model):
+    def test_parameter_priors(self, model) -> None:
         """Test that priors are defined for estimated parameters."""
         estimated_params = [p for p in model.parameters if not p.fixed]
 
@@ -235,37 +275,37 @@ class TestSmetsWouters2007Model:
         params_with_priors = [p for p in estimated_params if p.prior is not None]
         assert len(params_with_priors) > 10
 
-    def test_derived_parameters(self, model):
+    def test_derived_parameters(self, model) -> None:
         """Test computation of derived steady-state parameters."""
         params = model.parameters.to_dict()
         derived = model._compute_steady_state_params(params)
 
         # Check that key derived parameters exist
-        assert 'cbeta' in derived
-        assert 'cgamma' in derived
-        assert 'cbetabar' in derived
-        assert 'crk' in derived
-        assert 'cky' in derived
-        assert 'ccy' in derived
-        assert 'ciy' in derived
+        assert "cbeta" in derived
+        assert "cgamma" in derived
+        assert "cbetabar" in derived
+        assert "crk" in derived
+        assert "cky" in derived
+        assert "ccy" in derived
+        assert "ciy" in derived
 
         # Check reasonable values
-        assert 0 < derived['cbeta'] < 1  # Discount factor should be < 1
-        assert derived['cgamma'] > 1  # Gross growth rate should be > 1
-        assert derived['crk'] > 0  # Rental rate should be positive
-        assert 0 < derived['ccy'] < 1  # Consumption share should be between 0 and 1
-        assert 0 < derived['ciy'] < 1  # Investment share should be between 0 and 1
+        assert 0 < derived["cbeta"] < 1  # Discount factor should be < 1
+        assert derived["cgamma"] > 1  # Gross growth rate should be > 1
+        assert derived["crk"] > 0  # Rental rate should be positive
+        assert 0 < derived["ccy"] < 1  # Consumption share should be between 0 and 1
+        assert 0 < derived["ciy"] < 1  # Investment share should be between 0 and 1
 
-    def test_observable_construction(self, model):
+    def test_observable_construction(self, model) -> None:
         """Test that observables can be constructed from states."""
         # Solve model
         mats = model.system_matrices()
-        solution, info = solve_linear_model(
-            Gamma0=mats['Gamma0'],
-            Gamma1=mats['Gamma1'],
-            Psi=mats['Psi'],
-            Pi=mats['Pi'],
-            n_states=model.spec.n_states
+        solution, _info = solve_linear_model(
+            Gamma0=mats["Gamma0"],
+            Gamma1=mats["Gamma1"],
+            Psi=mats["Psi"],
+            Pi=mats["Pi"],
+            n_states=model.spec.n_states,
         )
 
         # Simulate states

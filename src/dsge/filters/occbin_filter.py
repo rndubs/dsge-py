@@ -6,12 +6,12 @@ binding constraints, where the state-space representation switches between
 regimes.
 """
 
-import numpy as np
-from typing import Tuple, Optional, List
 from dataclasses import dataclass
-from .kalman import KalmanFilter as StandardKalmanFilter
+
+import numpy as np
+
 from ..solvers.linear import LinearSolution
-from ..solvers.occbin import OccBinSolver, OccBinConstraint
+from ..solvers.occbin import OccBinConstraint
 
 
 @dataclass
@@ -19,7 +19,7 @@ class OccBinFilterResults:
     """
     Results from OccBin filtering.
 
-    Attributes
+    Attributes:
     ----------
     log_likelihood : float
         Log likelihood of the data
@@ -34,24 +34,27 @@ class OccBinFilterResults:
     n_iterations : int
         Number of OccBin iterations for convergence
     """
+
     log_likelihood: float
     filtered_states: np.ndarray
     filtered_covariances: np.ndarray
     regime_sequence: np.ndarray
-    regime_probabilities: Optional[np.ndarray]
+    regime_probabilities: np.ndarray | None
     n_iterations: int
 
 
-def occbin_filter(y: np.ndarray,
-                  solution_M1: LinearSolution,
-                  solution_M2: LinearSolution,
-                  constraint: OccBinConstraint,
-                  Z: np.ndarray,
-                  D: np.ndarray,
-                  H: np.ndarray,
-                  a0: Optional[np.ndarray] = None,
-                  P0: Optional[np.ndarray] = None,
-                  max_iter: int = 50) -> OccBinFilterResults:
+def occbin_filter(
+    y: np.ndarray,
+    solution_M1: LinearSolution,
+    solution_M2: LinearSolution,
+    constraint: OccBinConstraint,
+    Z: np.ndarray,
+    D: np.ndarray,
+    H: np.ndarray,
+    a0: np.ndarray | None = None,
+    P0: np.ndarray | None = None,
+    max_iter: int = 50,
+) -> OccBinFilterResults:
     """
     Kalman filter for OccBin models with regime-switching.
 
@@ -81,12 +84,12 @@ def occbin_filter(y: np.ndarray,
     max_iter : int
         Maximum OccBin iterations
 
-    Returns
+    Returns:
     -------
     OccBinFilterResults
         Filtering results with regime sequence
     """
-    T_periods, n_obs = y.shape
+    T_periods, _n_obs = y.shape
     n_states = solution_M1.n_states
 
     # Initialize regime sequence (start with reference regime)
@@ -95,14 +98,15 @@ def occbin_filter(y: np.ndarray,
     # Initialize storage
     filtered_states = np.zeros((T_periods, n_states))
     filtered_covariances = np.zeros((T_periods, n_states, n_states))
-    predicted_states = np.zeros((T_periods, n_states))
-    predicted_covariances = np.zeros((T_periods, n_states, n_states))
+    np.zeros((T_periods, n_states))
+    np.zeros((T_periods, n_states, n_states))
 
     # Initial conditions
     if a0 is None:
         a0 = np.zeros(n_states)
     if P0 is None:
         from ..filters.kalman import solve_discrete_lyapunov
+
         RQR = solution_M1.R @ solution_M1.Q @ solution_M1.R.T
         P0 = solve_discrete_lyapunov(solution_M1.T, RQR)
 
@@ -114,22 +118,18 @@ def occbin_filter(y: np.ndarray,
         iteration += 1
 
         # Run Kalman filter with current regime sequence
-        log_lik, filt_states, filt_cov, pred_states, pred_cov = _filter_with_regimes(
+        log_lik, filt_states, filt_cov, _pred_states, _pred_cov = _filter_with_regimes(
             y, regime_seq, solution_M1, solution_M2, Z, D, H, a0, P0
         )
 
         # Check constraints and update regime sequence
-        new_regime_seq = _update_regime_sequence_filter(
-            filt_states, constraint, regime_seq
-        )
+        new_regime_seq = _update_regime_sequence_filter(filt_states, constraint, regime_seq)
 
         # Check convergence
         if np.array_equal(new_regime_seq, regime_seq):
             converged = True
             filtered_states = filt_states
             filtered_covariances = filt_cov
-            predicted_states = pred_states
-            predicted_covariances = pred_cov
             log_likelihood = log_lik
 
         regime_seq = new_regime_seq
@@ -140,19 +140,21 @@ def occbin_filter(y: np.ndarray,
         filtered_covariances=filtered_covariances,
         regime_sequence=regime_seq,
         regime_probabilities=None,  # Not computed in perfect foresight version
-        n_iterations=iteration
+        n_iterations=iteration,
     )
 
 
-def _filter_with_regimes(y: np.ndarray,
-                        regime_seq: np.ndarray,
-                        solution_M1: LinearSolution,
-                        solution_M2: LinearSolution,
-                        Z: np.ndarray,
-                        D: np.ndarray,
-                        H: np.ndarray,
-                        a0: np.ndarray,
-                        P0: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _filter_with_regimes(
+    y: np.ndarray,
+    regime_seq: np.ndarray,
+    solution_M1: LinearSolution,
+    solution_M2: LinearSolution,
+    Z: np.ndarray,
+    D: np.ndarray,
+    H: np.ndarray,
+    a0: np.ndarray,
+    P0: np.ndarray,
+) -> tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Run Kalman filter with regime-dependent matrices.
 
@@ -215,8 +217,7 @@ def _filter_with_regimes(y: np.ndarray,
                 # Update log likelihood
                 sign, logdet = np.linalg.slogdet(F)
                 if sign > 0:
-                    log_likelihood += -0.5 * (n_obs * np.log(2 * np.pi) +
-                                             logdet + v.T @ F_inv @ v)
+                    log_likelihood += -0.5 * (n_obs * np.log(2 * np.pi) + logdet + v.T @ F_inv @ v)
                 else:
                     log_likelihood = -np.inf
 
@@ -235,12 +236,18 @@ def _filter_with_regimes(y: np.ndarray,
         # Ensure symmetry
         P = 0.5 * (P + P.T)
 
-    return log_likelihood, filtered_states, filtered_covariances, predicted_states, predicted_covariances
+    return (
+        log_likelihood,
+        filtered_states,
+        filtered_covariances,
+        predicted_states,
+        predicted_covariances,
+    )
 
 
-def _update_regime_sequence_filter(filtered_states: np.ndarray,
-                                   constraint: OccBinConstraint,
-                                   old_regime_seq: np.ndarray) -> np.ndarray:
+def _update_regime_sequence_filter(
+    filtered_states: np.ndarray, constraint: OccBinConstraint, old_regime_seq: np.ndarray
+) -> np.ndarray:
     """
     Update regime sequence based on filtered states and constraint.
 
@@ -257,10 +264,9 @@ def _update_regime_sequence_filter(filtered_states: np.ndarray,
             # Reference regime - check if constraint violated
             if constraint.is_binding(X_t):
                 new_regime_seq[t] = 1
-        else:
-            # Alternative regime - check if can relax
-            if constraint.can_relax(X_t):
-                new_regime_seq[t] = 0
+        # Alternative regime - check if can relax
+        elif constraint.can_relax(X_t):
+            new_regime_seq[t] = 0
 
     return new_regime_seq
 
@@ -273,11 +279,13 @@ class OccBinParticleFilter:
     both states and regime sequences.
     """
 
-    def __init__(self,
-                 solution_M1: LinearSolution,
-                 solution_M2: LinearSolution,
-                 constraint: OccBinConstraint,
-                 n_particles: int = 1000):
+    def __init__(
+        self,
+        solution_M1: LinearSolution,
+        solution_M2: LinearSolution,
+        constraint: OccBinConstraint,
+        n_particles: int = 1000,
+    ) -> None:
         """
         Initialize particle filter.
 
@@ -297,11 +305,9 @@ class OccBinParticleFilter:
         self.constraint = constraint
         self.n_particles = n_particles
 
-    def filter(self,
-               y: np.ndarray,
-               Z: np.ndarray,
-               D: np.ndarray,
-               H: np.ndarray) -> OccBinFilterResults:
+    def filter(
+        self, y: np.ndarray, Z: np.ndarray, D: np.ndarray, H: np.ndarray
+    ) -> OccBinFilterResults:
         """
         Run particle filter.
 
@@ -316,12 +322,12 @@ class OccBinParticleFilter:
         H : array (n_obs x n_obs)
             Measurement error covariance
 
-        Returns
+        Returns:
         -------
         OccBinFilterResults
             Filtering results with regime probabilities
         """
-        T_periods, n_obs = y.shape
+        T_periods, _n_obs = y.shape
         n_states = self.M1.n_states
 
         # Initialize particles
@@ -373,7 +379,7 @@ class OccBinParticleFilter:
                     weights = np.ones(self.n_particles) / self.n_particles
 
             # Resample if needed (systematic resampling)
-            ess = 1.0 / np.sum(weights ** 2)
+            ess = 1.0 / np.sum(weights**2)
             if ess < self.n_particles / 2:
                 indices = self._systematic_resample(weights)
                 new_particles = new_particles[indices]
@@ -399,7 +405,7 @@ class OccBinParticleFilter:
             filtered_covariances=filtered_covariances,
             regime_sequence=regime_sequence,
             regime_probabilities=regime_probs,
-            n_iterations=1  # Particle filter runs once
+            n_iterations=1,  # Particle filter runs once
         )
 
     def _systematic_resample(self, weights: np.ndarray) -> np.ndarray:
@@ -407,5 +413,4 @@ class OccBinParticleFilter:
         n = len(weights)
         positions = (np.arange(n) + np.random.uniform(0, 1)) / n
         cumsum = np.cumsum(weights)
-        indices = np.searchsorted(cumsum, positions)
-        return indices
+        return np.asarray(np.searchsorted(cumsum, positions))

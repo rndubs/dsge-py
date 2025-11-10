@@ -1,21 +1,19 @@
-"""
-Forecasting utilities for DSGE models.
-"""
+"""Forecasting utilities for DSGE models."""
 
 from .forecast import (
-    forecast_states,
-    forecast_observables,
-    conditional_forecast,
-    compute_forecast_bands,
-    forecast_from_posterior,
     ForecastResult,
+    compute_forecast_bands,
+    conditional_forecast,
+    forecast_from_posterior,
+    forecast_observables,
+    forecast_states,
 )
 
 __all__ = [
-    'forecast_states',
-    'forecast_observables',
-    'conditional_forecast',
-    'compute_forecast_bands',
-    'forecast_from_posterior',
-    'ForecastResult',
+    "ForecastResult",
+    "compute_forecast_bands",
+    "conditional_forecast",
+    "forecast_from_posterior",
+    "forecast_observables",
+    "forecast_states",
 ]

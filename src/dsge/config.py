@@ -1,17 +1,23 @@
 """
-Configuration and Settings for DSGE Package
+Configuration and Settings for DSGE Package.
 
 This module provides centralized configuration management using pydantic-settings.
 Settings can be loaded from environment variables or a .env file.
 """
 
-from pathlib import Path
-from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
+class DSGESettings(BaseSettings):
+    """Base settings class with common fields."""
+
+    fred_api_key: str | None = Field(
+        default=None, description="FRED API key for downloading economic data", alias="FRED_API_KEY"
+    )
+
+
+class Settings(DSGESettings):
     """
     Application settings loaded from environment variables or .env file.
 
@@ -21,18 +27,12 @@ class Settings(BaseSettings):
     Example .env file:
         FRED_API_KEY=your_api_key_here
 
-    Attributes
+    Attributes:
     ----------
     fred_api_key : str, optional
         FRED (Federal Reserve Economic Data) API key for downloading economic data.
         Get your free API key at: https://fred.stlouisfed.org/docs/api/api_key.html
     """
-
-    fred_api_key: Optional[str] = Field(
-        default=None,
-        description="FRED API key for downloading economic data",
-        alias="FRED_API_KEY"
-    )
 
     model_config = SettingsConfigDict(
         # Look for .env file in project root
@@ -44,27 +44,27 @@ class Settings(BaseSettings):
         # Make validation case-insensitive
         case_sensitive=False,
         # Allow extra fields (for future expansion)
-        extra="ignore"
+        extra="ignore",
     )
 
 
 # Global settings instance
-_settings: Optional[Settings] = None
+_settings: DSGESettings | None = None
 
 
-def get_settings() -> Settings:
+def get_settings() -> DSGESettings:
     """
     Get the global settings instance.
 
     This function implements a singleton pattern to ensure settings
     are only loaded once per application run.
 
-    Returns
+    Returns:
     -------
     Settings
         The application settings instance
 
-    Examples
+    Examples:
     --------
     >>> from dsge.config import get_settings
     >>> settings = get_settings()
@@ -76,7 +76,7 @@ def get_settings() -> Settings:
     return _settings
 
 
-def reload_settings(env_file: Optional[str] = ".env") -> Settings:
+def reload_settings(env_file: str | None = ".env") -> DSGESettings:
     """
     Reload settings from environment variables and .env file.
 
@@ -89,12 +89,12 @@ def reload_settings(env_file: Optional[str] = ".env") -> Settings:
         Path to .env file to load. If None, will not load from .env file.
         Defaults to ".env"
 
-    Returns
+    Returns:
     -------
     Settings
         The newly loaded settings instance
 
-    Examples
+    Examples:
     --------
     >>> from dsge.config import reload_settings
     >>> settings = reload_settings()
@@ -107,20 +107,15 @@ def reload_settings(env_file: Optional[str] = ".env") -> Settings:
     if env_file is None:
         # Disable .env file loading by creating a custom Settings class
         # that explicitly sets env_file to a non-existent file
-        class SettingsNoEnv(BaseSettings):
+        class SettingsNoEnv(DSGESettings):
             """Settings without .env file loading."""
-            fred_api_key: Optional[str] = Field(
-                default=None,
-                description="FRED API key for downloading economic data",
-                alias="FRED_API_KEY"
-            )
 
             model_config = SettingsConfigDict(
                 # Don't load from .env file
                 env_file_encoding="utf-8",
                 populate_by_name=True,
                 case_sensitive=False,
-                extra="ignore"
+                extra="ignore",
             )
 
         _settings = SettingsNoEnv()
@@ -130,19 +125,19 @@ def reload_settings(env_file: Optional[str] = ".env") -> Settings:
     return _settings
 
 
-def get_fred_api_key() -> Optional[str]:
+def get_fred_api_key() -> str | None:
     """
     Get the FRED API key from settings.
 
     This is a convenience function that returns the FRED API key
     if it's configured in the environment or .env file.
 
-    Returns
+    Returns:
     -------
     str or None
         The FRED API key if configured, None otherwise
 
-    Examples
+    Examples:
     --------
     >>> from dsge.config import get_fred_api_key
     >>> api_key = get_fred_api_key()
@@ -155,8 +150,8 @@ def get_fred_api_key() -> Optional[str]:
 
 
 __all__ = [
-    'Settings',
-    'get_settings',
-    'reload_settings',
-    'get_fred_api_key',
+    "Settings",
+    "get_fred_api_key",
+    "get_settings",
+    "reload_settings",
 ]

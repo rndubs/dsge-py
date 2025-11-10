@@ -1,20 +1,19 @@
-"""
-Tests for the Simple New Keynesian model.
-"""
+"""Tests for the Simple New Keynesian model."""
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.simple_nk_model import create_simple_nk_model
 from src.dsge.solvers.linear import solve_linear_model
 
 
-def test_simple_nk_creation():
+def test_simple_nk_creation() -> None:
     """Test that the simple NK model can be created."""
     model = create_simple_nk_model()
 
@@ -25,7 +24,7 @@ def test_simple_nk_creation():
     assert len(model.parameters) == 11
 
 
-def test_simple_nk_system_matrices():
+def test_simple_nk_system_matrices() -> None:
     """Test that system matrices have correct dimensions."""
     model = create_simple_nk_model()
     mats = model.system_matrices()
@@ -33,13 +32,13 @@ def test_simple_nk_system_matrices():
     n = model.spec.n_states
     n_shocks = model.spec.n_shocks
 
-    assert mats['Gamma0'].shape == (n, n)
-    assert mats['Gamma1'].shape == (n, n)
-    assert mats['Psi'].shape == (n, n_shocks)
-    assert mats['Pi'].shape == (n, 2)  # 2 expectation errors
+    assert mats["Gamma0"].shape == (n, n)
+    assert mats["Gamma1"].shape == (n, n)
+    assert mats["Psi"].shape == (n, n_shocks)
+    assert mats["Pi"].shape == (n, 2)  # 2 expectation errors
 
 
-def test_simple_nk_measurement():
+def test_simple_nk_measurement() -> None:
     """Test measurement equation."""
     model = create_simple_nk_model()
     Z, D = model.measurement_equation()
@@ -53,19 +52,19 @@ def test_simple_nk_measurement():
     assert Z[2, 2] == 1.0  # r
 
 
-def test_simple_nk_solution():
+def test_simple_nk_solution() -> None:
     """Test that the model can be solved."""
     model = create_simple_nk_model()
     mats = model.system_matrices()
 
     # Solve the model
     try:
-        solution, info = solve_linear_model(
-            Gamma0=mats['Gamma0'],
-            Gamma1=mats['Gamma1'],
-            Psi=mats['Psi'],
-            Pi=mats['Pi'],
-            n_states=model.spec.n_states
+        solution, _info = solve_linear_model(
+            Gamma0=mats["Gamma0"],
+            Gamma1=mats["Gamma1"],
+            Psi=mats["Psi"],
+            Pi=mats["Pi"],
+            n_states=model.spec.n_states,
         )
 
         # Check solution exists
@@ -86,25 +85,24 @@ def test_simple_nk_solution():
         eigvals = np.linalg.eigvals(solution.T)
         max_eigval = np.max(np.abs(eigvals))
 
-        print(f"\nMaximum eigenvalue magnitude: {max_eigval:.4f}")
         assert max_eigval < 1.0, "Solution should be stable"
 
     except Exception as e:
-        pytest.fail(f"Model solution failed: {str(e)}")
+        pytest.fail(f"Model solution failed: {e!s}")
 
 
-def test_simple_nk_simulation():
+def test_simple_nk_simulation() -> None:
     """Test model simulation."""
     model = create_simple_nk_model()
     mats = model.system_matrices()
 
     # Solve the model
-    solution, info = solve_linear_model(
-        Gamma0=mats['Gamma0'],
-        Gamma1=mats['Gamma1'],
-        Psi=mats['Psi'],
-        Pi=mats['Pi'],
-        n_states=model.spec.n_states
+    solution, _info = solve_linear_model(
+        Gamma0=mats["Gamma0"],
+        Gamma1=mats["Gamma1"],
+        Psi=mats["Psi"],
+        Pi=mats["Pi"],
+        n_states=model.spec.n_states,
     )
 
     # Simulate
@@ -118,31 +116,26 @@ def test_simple_nk_simulation():
 
     # Simulate forward
     for t in range(1, T):
-        states[t] = solution.C + solution.T @ states[t-1] + solution.R @ shocks[t]
+        states[t] = solution.C + solution.T @ states[t - 1] + solution.R @ shocks[t]
 
     # Check that simulation doesn't explode
     assert np.all(np.isfinite(states)), "Simulation should remain finite"
     assert np.max(np.abs(states)) < 10.0, "Simulation should not explode"
 
-    print(f"\nSimulation statistics:")
-    print(f"  Max absolute value: {np.max(np.abs(states)):.4f}")
-    print(f"  Output std dev: {np.std(states[:, 0]):.4f}")
-    print(f"  Inflation std dev: {np.std(states[:, 1]):.4f}")
-    print(f"  Rate std dev: {np.std(states[:, 2]):.4f}")
 
 
-def test_simple_nk_impulse_responses():
+def test_simple_nk_impulse_responses() -> None:
     """Test impulse response functions."""
     model = create_simple_nk_model()
     mats = model.system_matrices()
 
     # Solve the model
-    solution, info = solve_linear_model(
-        Gamma0=mats['Gamma0'],
-        Gamma1=mats['Gamma1'],
-        Psi=mats['Psi'],
-        Pi=mats['Pi'],
-        n_states=model.spec.n_states
+    solution, _info = solve_linear_model(
+        Gamma0=mats["Gamma0"],
+        Gamma1=mats["Gamma1"],
+        Psi=mats["Psi"],
+        Pi=mats["Pi"],
+        n_states=model.spec.n_states,
     )
 
     # Compute IRF to monetary policy shock
@@ -159,7 +152,7 @@ def test_simple_nk_impulse_responses():
 
     # Periods 1 onwards: propagation
     for h in range(1, H):
-        irf[h] = solution.T @ irf[h-1]
+        irf[h] = solution.T @ irf[h - 1]
 
     # Check IRF properties
     # Monetary policy shock should:
@@ -172,34 +165,21 @@ def test_simple_nk_impulse_responses():
     assert np.min(irf[:, 1]) < 0, "MP shock should decrease inflation"
 
     # IRF should die out
-    assert np.max(np.abs(irf[-5:, :])) < np.max(np.abs(irf[:5, :])), \
-        "IRF should decay over time"
+    assert np.max(np.abs(irf[-5:, :])) < np.max(np.abs(irf[:5, :])), "IRF should decay over time"
 
-    print(f"\nIRF to monetary policy shock:")
-    print(f"  Output impact: {irf[0, 0]:.4f}")
-    print(f"  Inflation impact: {irf[0, 1]:.4f}")
-    print(f"  Rate impact: {irf[0, 2]:.4f}")
-    print(f"  Output minimum: {np.min(irf[:, 0]):.4f} at period {np.argmin(irf[:, 0])}")
 
 
 if __name__ == "__main__":
     # Run tests
     test_simple_nk_creation()
-    print("✓ Model creation test passed")
 
     test_simple_nk_system_matrices()
-    print("✓ System matrices test passed")
 
     test_simple_nk_measurement()
-    print("✓ Measurement equation test passed")
 
     test_simple_nk_solution()
-    print("✓ Model solution test passed")
 
     test_simple_nk_simulation()
-    print("✓ Simulation test passed")
 
     test_simple_nk_impulse_responses()
-    print("✓ Impulse response test passed")
 
-    print("\n✅ All tests passed!")

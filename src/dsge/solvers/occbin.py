@@ -5,11 +5,12 @@ Implements the Guerrieri-Iacoviello (2015) algorithm for solving DSGE models
 with occasionally binding constraints.
 """
 
-import numpy as np
-from typing import Dict, Callable, Optional, Tuple, List
+from collections.abc import Callable
 from dataclasses import dataclass
-from scipy import linalg
-from .linear import solve_linear_model, LinearSolution
+
+import numpy as np
+
+from .linear import LinearSolution
 
 
 @dataclass
@@ -17,7 +18,7 @@ class OccBinConstraint:
     """
     Specification of an occasionally binding constraint.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Name of the constraint (e.g., 'ZLB')
@@ -28,6 +29,7 @@ class OccBinConstraint:
     bound_value : float
         The bound value (e.g., 0 for ZLB)
     """
+
     name: str
     binding_condition: Callable[[np.ndarray], bool]
     variable_index: int
@@ -48,7 +50,7 @@ class OccBinSolution:
     """
     Solution to an OccBin model.
 
-    Attributes
+    Attributes:
     ----------
     states : array
         Time path of state variables
@@ -61,6 +63,7 @@ class OccBinSolution:
     n_iterations : int
         Number of iterations required
     """
+
     states: np.ndarray
     controls: np.ndarray
     regime_sequence: np.ndarray
@@ -75,12 +78,14 @@ class OccBinSolver:
     This implements the Guerrieri-Iacoviello (2015) guess-and-verify algorithm.
     """
 
-    def __init__(self,
-                 solution_M1: LinearSolution,
-                 solution_M2: LinearSolution,
-                 constraint: OccBinConstraint,
-                 max_iter: int = 50,
-                 convergence_tol: float = 1e-10):
+    def __init__(
+        self,
+        solution_M1: LinearSolution,
+        solution_M2: LinearSolution,
+        constraint: OccBinConstraint,
+        max_iter: int = 50,
+        convergence_tol: float = 1e-10,
+    ) -> None:
         """
         Initialize OccBin solver.
 
@@ -103,10 +108,7 @@ class OccBinSolver:
         self.max_iter = max_iter
         self.convergence_tol = convergence_tol
 
-    def solve(self,
-              initial_state: np.ndarray,
-              shocks: np.ndarray,
-              T: int) -> OccBinSolution:
+    def solve(self, initial_state: np.ndarray, shocks: np.ndarray, T: int) -> OccBinSolution:
         """
         Solve the OccBin model.
 
@@ -119,13 +121,11 @@ class OccBinSolver:
         T : int
             Simulation horizon
 
-        Returns
+        Returns:
         -------
         OccBinSolution
             Solution with regime-switching paths
         """
-        n_states = self.M1.n_states
-
         # Initialize regime sequence (start with reference regime)
         regime_seq = np.zeros(T, dtype=int)
 
@@ -154,21 +154,19 @@ class OccBinSolver:
             controls=controls,
             regime_sequence=regime_seq,
             converged=converged,
-            n_iterations=iteration
+            n_iterations=iteration,
         )
 
-    def _solve_with_regime_sequence(self,
-                                    initial_state: np.ndarray,
-                                    shocks: np.ndarray,
-                                    regime_seq: np.ndarray,
-                                    T: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _solve_with_regime_sequence(
+        self, initial_state: np.ndarray, shocks: np.ndarray, regime_seq: np.ndarray, T: int
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Solve model forward given regime sequence.
 
         Uses the appropriate decision rules (M1 or M2) for each period.
         """
         n_states = self.M1.n_states
-        n_shocks = shocks.shape[1] if len(shocks.shape) > 1 else 1
+        shocks.shape[1] if len(shocks.shape) > 1 else 1
 
         states = np.zeros((T, n_states))
         states[0] = initial_state
@@ -178,23 +176,18 @@ class OccBinSolver:
         controls = np.zeros((T, 0))
 
         for t in range(1, T):
-            if regime_seq[t-1] == 0:
+            if regime_seq[t - 1] == 0:
                 # Use reference regime M1
-                states[t] = (self.M1.T @ states[t-1] +
-                           self.M1.R @ shocks[t-1] +
-                           self.M1.C)
+                states[t] = self.M1.T @ states[t - 1] + self.M1.R @ shocks[t - 1] + self.M1.C
             else:
                 # Use alternative regime M2
-                states[t] = (self.M2.T @ states[t-1] +
-                           self.M2.R @ shocks[t-1] +
-                           self.M2.C)
+                states[t] = self.M2.T @ states[t - 1] + self.M2.R @ shocks[t - 1] + self.M2.C
 
         return states, controls
 
-    def _update_regime_sequence(self,
-                               states: np.ndarray,
-                               controls: np.ndarray,
-                               old_regime_seq: np.ndarray) -> np.ndarray:
+    def _update_regime_sequence(
+        self, states: np.ndarray, controls: np.ndarray, old_regime_seq: np.ndarray
+    ) -> np.ndarray:
         """
         Update regime sequence based on constraint violations.
 
@@ -213,17 +206,16 @@ class OccBinSolver:
                 # Reference regime - check if constraint violated
                 if self.constraint.is_binding(X_t):
                     new_regime_seq[t] = 1  # Switch to alternative
-            else:
-                # Alternative regime - check if constraint can be relaxed
-                if self.constraint.can_relax(X_t):
-                    new_regime_seq[t] = 0  # Switch to reference
+            # Alternative regime - check if constraint can be relaxed
+            elif self.constraint.can_relax(X_t):
+                new_regime_seq[t] = 0  # Switch to reference
 
         return new_regime_seq
 
 
-def create_zlb_constraint(variable_index: int,
-                         bound: float = 0.0,
-                         name: str = 'ZLB') -> OccBinConstraint:
+def create_zlb_constraint(
+    variable_index: int, bound: float = 0.0, name: str = "ZLB"
+) -> OccBinConstraint:
     """
     Create a Zero Lower Bound (ZLB) constraint.
 
@@ -236,11 +228,12 @@ def create_zlb_constraint(variable_index: int,
     name : str
         Name of the constraint
 
-    Returns
+    Returns:
     -------
     OccBinConstraint
         ZLB constraint specification
     """
+
     def binding_condition(X: np.ndarray) -> bool:
         # Binding if variable <= bound (with small tolerance)
         return X[variable_index] <= bound + 1e-10
@@ -249,5 +242,5 @@ def create_zlb_constraint(variable_index: int,
         name=name,
         binding_condition=binding_condition,
         variable_index=variable_index,
-        bound_value=bound
+        bound_value=bound,
     )

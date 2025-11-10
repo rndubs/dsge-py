@@ -1,22 +1,21 @@
 """Tests for OccBin solver."""
 
 import numpy as np
-import pytest
+
 from dsge.solvers.linear import LinearSolution
-from dsge.solvers.occbin import (OccBinSolver, OccBinConstraint,
-                                 create_zlb_constraint)
+from dsge.solvers.occbin import OccBinConstraint, OccBinSolver, create_zlb_constraint
 
 
-def test_zlb_constraint_creation():
+def test_zlb_constraint_creation() -> None:
     """Test ZLB constraint creation."""
     constraint = create_zlb_constraint(variable_index=0, bound=0.0)
 
-    assert constraint.name == 'ZLB'
+    assert constraint.name == "ZLB"
     assert constraint.variable_index == 0
     assert constraint.bound_value == 0.0
 
 
-def test_constraint_binding():
+def test_constraint_binding() -> None:
     """Test constraint binding detection."""
     constraint = create_zlb_constraint(variable_index=0, bound=0.0)
 
@@ -32,7 +31,7 @@ def test_constraint_binding():
     assert not constraint.is_binding(X_positive)
 
 
-def test_constraint_relaxation():
+def test_constraint_relaxation() -> None:
     """Test constraint relaxation detection."""
     constraint = create_zlb_constraint(variable_index=0, bound=0.0)
 
@@ -45,7 +44,7 @@ def test_constraint_relaxation():
     assert not constraint.can_relax(X_negative)
 
 
-def test_occbin_solver_simple():
+def test_occbin_solver_simple() -> None:
     """Test OccBin solver with simple example."""
     # Create simple AR(1) models for two regimes
     # M1: x_t = 0.9*x_{t-1} + ε_t
@@ -60,7 +59,7 @@ def test_occbin_solver_simple():
         Q=np.eye(1),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     solution_M2 = LinearSolution(
@@ -72,7 +71,7 @@ def test_occbin_solver_simple():
         Q=np.eye(1),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     # Create constraint: switch to M2 when x < -1
@@ -80,10 +79,7 @@ def test_occbin_solver_simple():
         return X[0] < -1.0
 
     constraint = OccBinConstraint(
-        name='test',
-        binding_condition=binding_condition,
-        variable_index=0,
-        bound_value=-1.0
+        name="test", binding_condition=binding_condition, variable_index=0, bound_value=-1.0
     )
 
     # Create solver
@@ -104,7 +100,7 @@ def test_occbin_solver_simple():
     assert result.regime_sequence.shape == (T,)
 
 
-def test_occbin_solver_no_binding():
+def test_occbin_solver_no_binding() -> None:
     """Test OccBin solver when constraint never binds."""
     # Same models as before
     solution_M1 = LinearSolution(
@@ -116,7 +112,7 @@ def test_occbin_solver_no_binding():
         Q=np.eye(1),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     solution_M2 = LinearSolution(
@@ -128,7 +124,7 @@ def test_occbin_solver_no_binding():
         Q=np.eye(1),
         n_unstable=0,
         n_states=1,
-        is_stable=True
+        is_stable=True,
     )
 
     constraint = create_zlb_constraint(variable_index=0, bound=-10.0)  # Very low bound

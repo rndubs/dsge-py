@@ -1,5 +1,5 @@
 """
-Simple 3-Equation New Keynesian Model
+Simple 3-Equation New Keynesian Model.
 
 A basic New Keynesian model with:
 - IS curve (consumption Euler equation)
@@ -9,11 +9,11 @@ A basic New Keynesian model with:
 This serves as a simpler example before the full NYFed model.
 """
 
+
 import numpy as np
-from typing import Dict, Optional, Tuple
 
 from src.dsge.models.base import DSGEModel, ModelSpecification
-from src.dsge.models.parameters import Parameter, ParameterSet, Prior
+from src.dsge.models.parameters import Parameter
 
 
 class SimpleNKModel(DSGEModel):
@@ -35,7 +35,7 @@ class SimpleNKModel(DSGEModel):
     e_r_t = sigma_r * eps_r_t
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the simple NK model."""
         # Define model dimensions
         # States: y, pi, r, y_lag, pi_lag, r_lag, e_y, e_pi, e_r
@@ -44,9 +44,9 @@ class SimpleNKModel(DSGEModel):
         n_shocks = 3  # IS shock, AS shock, MP shock
         n_observables = 3  # Output, inflation, rate
 
-        state_names = ['y', 'pi', 'r', 'y_lag', 'pi_lag', 'r_lag', 'e_y', 'e_pi', 'e_r']
-        shock_names = ['eps_y', 'eps_pi', 'eps_r']
-        observable_names = ['obs_y', 'obs_pi', 'obs_r']
+        state_names = ["y", "pi", "r", "y_lag", "pi_lag", "r_lag", "e_y", "e_pi", "e_r"]
+        shock_names = ["eps_y", "eps_pi", "eps_r"]
+        observable_names = ["obs_y", "obs_pi", "obs_r"]
 
         spec = ModelSpecification(
             n_states=n_states,
@@ -56,96 +56,84 @@ class SimpleNKModel(DSGEModel):
             state_names=state_names,
             control_names=[],
             shock_names=shock_names,
-            observable_names=observable_names
+            observable_names=observable_names,
         )
 
         super().__init__(spec)
 
-    def _setup_parameters(self):
+    def _setup_parameters(self) -> None:
         """Define model parameters."""
         # Household parameters
-        self.parameters.add(Parameter(
-            name='sigma',
-            value=1.5,
-            fixed=False,
-            description='Intertemporal elasticity of substitution'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma",
+                value=1.5,
+                fixed=False,
+                description="Intertemporal elasticity of substitution",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='beta',
-            value=0.99,
-            fixed=True,
-            description='Discount factor'
-        ))
+        self.parameters.add(
+            Parameter(name="beta", value=0.99, fixed=True, description="Discount factor")
+        )
 
         # Firm parameters
-        self.parameters.add(Parameter(
-            name='kappa',
-            value=0.1,
-            fixed=False,
-            description='Slope of Phillips curve'
-        ))
+        self.parameters.add(
+            Parameter(name="kappa", value=0.1, fixed=False, description="Slope of Phillips curve")
+        )
 
         # Policy parameters
-        self.parameters.add(Parameter(
-            name='phi_pi',
-            value=1.5,
-            fixed=False,
-            description='Taylor rule coefficient on inflation'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="phi_pi",
+                value=1.5,
+                fixed=False,
+                description="Taylor rule coefficient on inflation",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='phi_y',
-            value=0.5,
-            fixed=False,
-            description='Taylor rule coefficient on output'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="phi_y",
+                value=0.5,
+                fixed=False,
+                description="Taylor rule coefficient on output",
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='rho_r',
-            value=0.75,
-            fixed=False,
-            description='Interest rate smoothing'
-        ))
+        self.parameters.add(
+            Parameter(name="rho_r", value=0.75, fixed=False, description="Interest rate smoothing")
+        )
 
         # Shock persistence
-        self.parameters.add(Parameter(
-            name='rho_y',
-            value=0.5,
-            fixed=False,
-            description='IS shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(name="rho_y", value=0.5, fixed=False, description="IS shock persistence")
+        )
 
-        self.parameters.add(Parameter(
-            name='rho_pi',
-            value=0.5,
-            fixed=False,
-            description='Cost-push shock persistence'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="rho_pi", value=0.5, fixed=False, description="Cost-push shock persistence"
+            )
+        )
 
         # Shock standard deviations
-        self.parameters.add(Parameter(
-            name='sigma_y',
-            value=0.1,
-            fixed=False,
-            description='IS shock std dev'
-        ))
+        self.parameters.add(
+            Parameter(name="sigma_y", value=0.1, fixed=False, description="IS shock std dev")
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_pi',
-            value=0.1,
-            fixed=False,
-            description='Cost-push shock std dev'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_pi", value=0.1, fixed=False, description="Cost-push shock std dev"
+            )
+        )
 
-        self.parameters.add(Parameter(
-            name='sigma_r',
-            value=0.1,
-            fixed=False,
-            description='Monetary policy shock std dev'
-        ))
+        self.parameters.add(
+            Parameter(
+                name="sigma_r", value=0.1, fixed=False, description="Monetary policy shock std dev"
+            )
+        )
 
-    def system_matrices(self, params: Optional[np.ndarray] = None) -> Dict[str, np.ndarray]:
+    def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """
         Compute linearized system matrices.
 
@@ -156,17 +144,17 @@ class SimpleNKModel(DSGEModel):
         """
         # Get parameter values
         p = self.parameters.to_dict() if params is None else params
-        sigma = p['sigma']
-        beta = p['beta']
-        kappa = p['kappa']
-        phi_pi = p['phi_pi']
-        phi_y = p['phi_y']
-        rho_r = p['rho_r']
-        rho_y = p['rho_y']
-        rho_pi = p['rho_pi']
-        sigma_y = p['sigma_y']
-        sigma_pi = p['sigma_pi']
-        sigma_r = p['sigma_r']
+        sigma = p["sigma"]
+        beta = p["beta"]
+        kappa = p["kappa"]
+        phi_pi = p["phi_pi"]
+        phi_y = p["phi_y"]
+        rho_r = p["rho_r"]
+        rho_y = p["rho_y"]
+        rho_pi = p["rho_pi"]
+        sigma_y = p["sigma_y"]
+        sigma_pi = p["sigma_pi"]
+        sigma_r = p["sigma_r"]
 
         n = self.spec.n_states
         n_shocks = self.spec.n_shocks
@@ -258,16 +246,13 @@ class SimpleNKModel(DSGEModel):
         Gamma0[idx_e_r, idx_e_r] = 1.0
         Psi[idx_e_r, idx_eps_r] = sigma_r
 
-        return {
-            'Gamma0': Gamma0,
-            'Gamma1': Gamma1,
-            'Psi': Psi,
-            'Pi': Pi
-        }
+        return {"Gamma0": Gamma0, "Gamma1": Gamma1, "Psi": Psi, "Pi": Pi}
 
-    def measurement_equation(self, params: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
+    def measurement_equation(
+        self, params: np.ndarray | None = None
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Measurement equation: observables = Z * states + D
+        Measurement equation: observables = Z * states + D.
 
         obs_y_t = y_t
         obs_pi_t = pi_t
@@ -290,7 +275,7 @@ class SimpleNKModel(DSGEModel):
 
         return Z, D
 
-    def steady_state(self, params: Optional[np.ndarray] = None) -> np.ndarray:
+    def steady_state(self, params: np.ndarray | None = None) -> np.ndarray:
         """
         Compute steady state.
 
@@ -308,20 +293,9 @@ def create_simple_nk_model() -> SimpleNKModel:
 if __name__ == "__main__":
     # Example usage
     model = create_simple_nk_model()
-    print(f"Model: Simple New Keynesian")
-    print(f"States: {model.spec.n_states}")
-    print(f"Shocks: {model.spec.n_shocks}")
-    print(f"Observables: {model.spec.n_observables}")
-    print(f"Parameters: {len(model.parameters)}")
 
     # Test system matrices
     mats = model.system_matrices()
-    print(f"\nGamma0 shape: {mats['Gamma0'].shape}")
-    print(f"Gamma1 shape: {mats['Gamma1'].shape}")
-    print(f"Psi shape: {mats['Psi'].shape}")
-    print(f"Pi shape: {mats['Pi'].shape}")
 
     # Test measurement equation
     Z, D = model.measurement_equation()
-    print(f"\nZ shape: {Z.shape}")
-    print(f"D shape: {D.shape}")

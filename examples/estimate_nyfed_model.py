@@ -1,33 +1,32 @@
 """
-NYFed Model 1002 - Bayesian Estimation using SMC
+NYFed Model 1002 - Bayesian Estimation using SMC.
 
 This script estimates the NYFed DSGE model using Sequential Monte Carlo (SMC)
 with synthetic or real data.
 """
 
+import sys
+import time
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import sys
-import os
-from pathlib import Path
-import time
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.nyfed_model_1002 import create_nyfed_model
 from dsge.estimation.smc import SMCSampler
 from dsge.filters.kalman import kalman_filter
+from models.nyfed_model_1002 import create_nyfed_model
 
 
 def estimate_nyfed_model(
-    data_path: str = 'data/nyfed_synthetic_data.csv',
+    data_path: str = "data/nyfed_synthetic_data.csv",
     n_particles: int = 1000,
     n_phi: int = 100,
-    save_dir: str = 'results/nyfed_estimation',
+    save_dir: str = "results/nyfed_estimation",
     subset_params: bool = True,
-    verbose: bool = True
+    verbose: bool = True,
 ):
     """
     Estimate NYFed Model 1002 using SMC.
@@ -47,66 +46,56 @@ def estimate_nyfed_model(
     verbose : bool
         Print progress information
 
-    Returns
+    Returns:
     -------
     dict
         Estimation results including posterior samples and diagnostics
     """
-    print("="*80)
-    print("NYFed Model 1002 - Bayesian Estimation")
-    print("="*80)
-
     # Load data
     if verbose:
-        print(f"\n1. Loading data from {data_path}...")
+        pass
 
     data = pd.read_csv(data_path, index_col=0, parse_dates=True)
 
     if verbose:
-        print(f"   Observations: {len(data)}")
-        print(f"   Variables: {len(data.columns)}")
-        print(f"   Period: {data.index[0]} to {data.index[-1]}")
+        pass
 
     # Convert to numpy array
     y = data.values
 
     # Create model
     if verbose:
-        print("\n2. Creating NYFed model...")
+        pass
 
     model = create_nyfed_model()
 
     if verbose:
-        print(f"   States: {model.spec.n_states}")
-        print(f"   Observables: {model.spec.n_observables}")
-        print(f"   Total parameters: {len(model.parameters)}")
+        pass
 
     # Select parameters to estimate
     if subset_params:
         # Estimate a subset of key parameters for faster testing
         params_to_estimate = [
-            'sigma_c',      # Consumption risk aversion
-            'h',            # Habit formation
-            'psi_1',        # Taylor rule: inflation response
-            'psi_2',        # Taylor rule: output gap response
-            'rho_r',        # Interest rate smoothing
-            'rho_z',        # Technology shock persistence
-            'rho_b',        # Preference shock persistence
-            'sigma_r',      # Monetary policy shock std
-            'sigma_z',      # Technology shock std
-            'sigma_b',      # Preference shock std
+            "sigma_c",  # Consumption risk aversion
+            "h",  # Habit formation
+            "psi_1",  # Taylor rule: inflation response
+            "psi_2",  # Taylor rule: output gap response
+            "rho_r",  # Interest rate smoothing
+            "rho_z",  # Technology shock persistence
+            "rho_b",  # Preference shock persistence
+            "sigma_r",  # Monetary policy shock std
+            "sigma_z",  # Technology shock std
+            "sigma_b",  # Preference shock std
         ]
 
         if verbose:
-            print(f"   Estimating subset: {len(params_to_estimate)} parameters")
-            for p in params_to_estimate:
-                print(f"     - {p}")
+            for _p in params_to_estimate:
+                pass
     else:
         # Estimate all parameters with priors
-        params_to_estimate = [p.name for p in model.parameters.parameters
-                              if p.prior is not None]
+        params_to_estimate = [p.name for p in model.parameters.parameters if p.prior is not None]
         if verbose:
-            print(f"   Estimating all parameters with priors: {len(params_to_estimate)}")
+            pass
 
     # Define log-likelihood function
     def log_likelihood(theta):
@@ -126,11 +115,11 @@ def estimate_nyfed_model(
             from dsge.solvers.linear import solve_linear_model
 
             solution, info = solve_linear_model(
-                Gamma0=mats['Gamma0'],
-                Gamma1=mats['Gamma1'],
-                Psi=mats['Psi'],
-                Pi=mats['Pi'],
-                n_states=model.spec.n_states
+                Gamma0=mats["Gamma0"],
+                Gamma1=mats["Gamma1"],
+                Psi=mats["Psi"],
+                Pi=mats["Pi"],
+                n_states=model.spec.n_states,
             )
 
             # Check solution validity
@@ -138,7 +127,7 @@ def estimate_nyfed_model(
                 return -np.inf
 
             # Check stability
-            max_eigval = np.max(np.abs(info['eigenvalues']))
+            max_eigval = np.max(np.abs(info["eigenvalues"]))
             if max_eigval > 1.05:  # Allow some tolerance
                 return -np.inf
 
@@ -162,29 +151,18 @@ def estimate_nyfed_model(
 
             # Run Kalman filter
             ll, _, _, _ = kalman_filter(
-                y=y,
-                T=T_mat,
-                R=R_mat,
-                C=C_vec,
-                Z=Z,
-                D=D,
-                Q=Q,
-                H=H,
-                x0=x0,
-                P0=P0
+                y=y, T=T_mat, R=R_mat, C=C_vec, Z=Z, D=D, Q=Q, H=H, x0=x0, P0=P0
             )
 
             return ll
 
-        except Exception as e:
+        except Exception:
             # Return very low likelihood for any errors
             return -np.inf
 
     # Set up SMC sampler
     if verbose:
-        print("\n3. Configuring SMC sampler...")
-        print(f"   Particles: {n_particles}")
-        print(f"   Tempering stages: {n_phi}")
+        pass
 
     # Get priors for estimated parameters
     param_objects = [model.parameters[name] for name in params_to_estimate]
@@ -195,104 +173,94 @@ def estimate_nyfed_model(
         n_particles=n_particles,
         n_phi=n_phi,
         target_ess=0.5,
-        mutation_steps=1
+        mutation_steps=1,
     )
 
     # Run estimation
     if verbose:
-        print("\n4. Running SMC estimation...")
-        print("   (This may take several minutes...)")
+        pass
 
     start_time = time.time()
 
     results = sampler.sample()
 
-    elapsed = time.time() - start_time
+    time.time() - start_time
 
     if verbose:
-        print(f"\n✓ Estimation complete in {elapsed:.1f} seconds")
+        pass
 
     # Extract results
-    posterior_samples = results['particles']
-    weights = results['weights']
-    log_evidence = results['log_evidence']
+    posterior_samples = results["particles"]
+    weights = results["weights"]
+    log_evidence = results["log_evidence"]
 
     # Compute posterior statistics
     posterior_mean = np.average(posterior_samples, weights=weights, axis=0)
     posterior_std = np.sqrt(
-        np.average((posterior_samples - posterior_mean)**2, weights=weights, axis=0)
+        np.average((posterior_samples - posterior_mean) ** 2, weights=weights, axis=0)
     )
 
     # Print results
     if verbose:
-        print("\n" + "="*80)
-        print("ESTIMATION RESULTS")
-        print("="*80)
 
-        print(f"\nLog marginal likelihood: {log_evidence:.2f}")
 
-        print("\nPosterior estimates:")
-        print(f"{'Parameter':<15} {'Prior Mean':<12} {'Post Mean':<12} {'Post Std':<12}")
-        print("-" * 60)
 
         for i, param_name in enumerate(params_to_estimate):
-            param = model.parameters[param_name]
-            prior_mean = param.value  # Calibrated value
-            post_mean = posterior_mean[i]
-            post_std = posterior_std[i]
+            model.parameters[param_name]
+            posterior_mean[i]
+            posterior_std[i]
 
-            print(f"{param_name:<15} {prior_mean:>11.4f}  {post_mean:>11.4f}  {post_std:>11.4f}")
 
     # Save results
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
     # Save posterior samples
-    posterior_df = pd.DataFrame(
-        posterior_samples,
-        columns=params_to_estimate
-    )
-    posterior_df['weight'] = weights
-    posterior_df.to_csv(f'{save_dir}/posterior_samples.csv', index=False)
+    posterior_df = pd.DataFrame(posterior_samples, columns=params_to_estimate)
+    posterior_df["weight"] = weights
+    posterior_df.to_csv(f"{save_dir}/posterior_samples.csv", index=False)
 
     # Save summary
-    summary = pd.DataFrame({
-        'parameter': params_to_estimate,
-        'prior_mean': [model.parameters[p].value for p in params_to_estimate],
-        'posterior_mean': posterior_mean,
-        'posterior_std': posterior_std,
-    })
-    summary.to_csv(f'{save_dir}/posterior_summary.csv', index=False)
+    summary = pd.DataFrame(
+        {
+            "parameter": params_to_estimate,
+            "prior_mean": [model.parameters[p].value for p in params_to_estimate],
+            "posterior_mean": posterior_mean,
+            "posterior_std": posterior_std,
+        }
+    )
+    summary.to_csv(f"{save_dir}/posterior_summary.csv", index=False)
 
     if verbose:
-        print(f"\n✓ Results saved to {save_dir}/")
+        pass
 
     return {
-        'posterior_samples': posterior_samples,
-        'weights': weights,
-        'log_evidence': log_evidence,
-        'posterior_mean': posterior_mean,
-        'posterior_std': posterior_std,
-        'param_names': params_to_estimate,
-        'model': model,
-        'data': data,
+        "posterior_samples": posterior_samples,
+        "weights": weights,
+        "log_evidence": log_evidence,
+        "posterior_mean": posterior_mean,
+        "posterior_std": posterior_std,
+        "param_names": params_to_estimate,
+        "model": model,
+        "data": data,
     }
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Estimate NYFed DSGE Model')
+    parser = argparse.ArgumentParser(description="Estimate NYFed DSGE Model")
 
-    parser.add_argument('--data', type=str, default='data/nyfed_synthetic_data.csv',
-                        help='Path to data CSV file')
-    parser.add_argument('--particles', type=int, default=1000,
-                        help='Number of SMC particles')
-    parser.add_argument('--stages', type=int, default=100,
-                        help='Number of tempering stages')
-    parser.add_argument('--output', type=str, default='results/nyfed_estimation',
-                        help='Output directory')
-    parser.add_argument('--full', action='store_true',
-                        help='Estimate all parameters (default: subset only)')
+    parser.add_argument(
+        "--data", type=str, default="data/nyfed_synthetic_data.csv", help="Path to data CSV file"
+    )
+    parser.add_argument("--particles", type=int, default=1000, help="Number of SMC particles")
+    parser.add_argument("--stages", type=int, default=100, help="Number of tempering stages")
+    parser.add_argument(
+        "--output", type=str, default="results/nyfed_estimation", help="Output directory"
+    )
+    parser.add_argument(
+        "--full", action="store_true", help="Estimate all parameters (default: subset only)"
+    )
 
     args = parser.parse_args()
 
@@ -302,5 +270,5 @@ if __name__ == "__main__":
         n_phi=args.stages,
         save_dir=args.output,
         subset_params=not args.full,
-        verbose=True
+        verbose=True,
     )
