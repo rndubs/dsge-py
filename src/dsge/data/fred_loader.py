@@ -163,7 +163,40 @@ def compute_real_series(nominal: pd.Series, deflator: pd.Series) -> pd.Series:
     pd.Series
         Real series
     """
-    return (nominal / deflator) * 100
+    # Normalize both series to use the same quarter period (to handle different
+    # quarter-end conventions like Q vs QE or start-of-quarter vs end-of-quarter)
+    if isinstance(nominal.index, pd.DatetimeIndex) and isinstance(deflator.index, pd.DatetimeIndex):
+        # Convert both to PeriodIndex with quarterly frequency for alignment
+        nominal_period = nominal.copy()
+        deflator_period = deflator.copy()
+
+        nominal_period.index = nominal.index.to_period('Q')
+        deflator_period.index = deflator.index.to_period('Q')
+
+        # Align by period (this will match 2019Q1 regardless of whether it's 2019-01-01 or 2019-03-31)
+        aligned_nominal, aligned_deflator = nominal_period.align(deflator_period, join='inner')
+
+        if len(aligned_nominal) == 0:
+            warnings.warn(
+                f"No overlapping quarters between nominal series and deflator. "
+                f"Nominal quarters: {nominal_period.index[[0, -1]].tolist() if len(nominal_period) > 0 else 'empty'}, "
+                f"Deflator quarters: {deflator_period.index[[0, -1]].tolist() if len(deflator_period) > 0 else 'empty'}"
+            )
+            return pd.Series(dtype=float)
+
+        # Compute real series
+        real_series = (aligned_nominal / aligned_deflator) * 100
+
+        # Convert back to timestamp index (using end of quarter)
+        real_series.index = real_series.index.to_timestamp(how='end')
+
+        return real_series
+    else:
+        # Fallback for non-datetime indices
+        aligned_nominal, aligned_deflator = nominal.align(deflator, join='inner')
+        if len(aligned_nominal) == 0:
+            return pd.Series(dtype=float)
+        return (aligned_nominal / aligned_deflator) * 100
 
 
 def transform_series(
@@ -200,6 +233,9 @@ def transform_series(
     elif transformation == 'real_quarterly_growth_rate':
         if deflator is None:
             raise ValueError("Deflator required for real_quarterly_growth_rate transformation")
+        if deflator.empty:
+            warnings.warn("Deflator is empty, returning empty series for real transformation")
+            return pd.Series(dtype=float)
         real_series = compute_real_series(series, deflator)
         return compute_growth_rate(real_series, annualize=True)
 
@@ -253,7 +289,9 @@ def load_nyfed_data(
     from pathlib import Path
 
     # Add data directory to path
-    data_dir = Path(__file__).parent.parent.parent / 'data'
+    # Path(__file__) = .../src/dsge/data/fred_loader.py
+    # .parent.parent.parent.parent = project root
+    data_dir = Path(__file__).parent.parent.parent.parent / 'data'
     sys.path.insert(0, str(data_dir))
 
     try:
@@ -271,7 +309,13 @@ def load_nyfed_data(
     # First, download GDP deflator (needed for real transformations)
     print("\n1. Downloading GDP deflator...")
     gdpdef = download_fred_series('GDPDEF', start_date, end_date, api_key)
-    gdpdef_q = to_quarterly(gdpdef, 'mean') if not gdpdef.empty else pd.Series()
+    if gdpdef.empty:
+        print("   ⚠️  Warning: GDP deflator download failed or returned empty")
+        gdpdef_q = pd.Series()
+    else:
+        print(f"   ✓ Downloaded: {len(gdpdef)} observations")
+        gdpdef_q = to_quarterly(gdpdef, 'mean')
+        print(f"   ✓ Quarterly: {len(gdpdef_q)} observations")
 
     # Download all series
     for i, (obs_name, spec) in enumerate(FRED_SERIES_MAP.items(), 1):
@@ -285,14 +329,18 @@ def load_nyfed_data(
             raw_data[obs_name] = pd.Series(dtype=float)
             continue
 
+        print(f"   ✓ Downloaded: {len(series)} observations")
+
         # Convert to quarterly if needed
         freq = pd.infer_freq(series.index)
-        if freq and ('M' in freq or 'D' in freq):
+        if freq and ('M' in freq or 'D' in freq or 'B' in freq):
             print(f"   Converting from {freq} to quarterly...")
+            series = to_quarterly(series, 'mean')
+        elif len(series) > 10:  # If we have many observations but freq not detected, likely daily/monthly
+            print(f"   WARNING: Many observations ({len(series)}) but frequency not detected. Converting to quarterly...")
             series = to_quarterly(series, 'mean')
 
         raw_data[obs_name] = series
-        print(f"   ✓ Downloaded: {len(series)} observations")
 
     # Apply transformations
     print("\n" + "="*80)
@@ -324,10 +372,29 @@ def load_nyfed_data(
             print(f"  ⚠️  Error transforming {obs_name}: {str(e)}")
             transformed_data[obs_name] = pd.Series(dtype=float)
 
-    # Combine into DataFrame
-    df = pd.DataFrame(transformed_data)
+    # Normalize all series to use the same quarter period before combining
+    # (to handle QS-OCT vs Q-DEC differences)
+    normalized_data = {}
+    for obs_name, series in transformed_data.items():
+        if not series.empty and isinstance(series.index, pd.DatetimeIndex):
+            # Convert to PeriodIndex then back to timestamp with consistent convention
+            series_normalized = series.copy()
+            series_normalized.index = series.index.to_period('Q').to_timestamp(how='end')
+            normalized_data[obs_name] = series_normalized
+        else:
+            normalized_data[obs_name] = series
 
-    # Align to common index (intersection of all series)
+    # Combine into DataFrame
+    df = pd.DataFrame(normalized_data)
+
+    # Ensure index is DatetimeIndex (not just Index)
+    if len(df) > 0 and not isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.DatetimeIndex(df.index)
+
+    # Remove columns that are entirely NaN (e.g., series that failed to download)
+    df = df.dropna(axis=1, how='all')
+
+    # Align to common index (intersection of all series with data)
     df = df.dropna()
 
     print("\n" + "="*80)

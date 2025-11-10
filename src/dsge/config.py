@@ -76,12 +76,18 @@ def get_settings() -> Settings:
     return _settings
 
 
-def reload_settings() -> Settings:
+def reload_settings(env_file: Optional[str] = ".env") -> Settings:
     """
     Reload settings from environment variables and .env file.
 
     This is useful for testing or when settings need to be refreshed
     during runtime.
+
+    Parameters
+    ----------
+    env_file : str or None, optional
+        Path to .env file to load. If None, will not load from .env file.
+        Defaults to ".env"
 
     Returns
     -------
@@ -92,9 +98,35 @@ def reload_settings() -> Settings:
     --------
     >>> from dsge.config import reload_settings
     >>> settings = reload_settings()
+    >>> # For testing without .env file:
+    >>> settings = reload_settings(env_file=None)
     """
     global _settings
-    _settings = Settings()
+
+    # Create settings with custom env_file parameter
+    if env_file is None:
+        # Disable .env file loading by creating a custom Settings class
+        # that explicitly sets env_file to a non-existent file
+        class SettingsNoEnv(BaseSettings):
+            """Settings without .env file loading."""
+            fred_api_key: Optional[str] = Field(
+                default=None,
+                description="FRED API key for downloading economic data",
+                alias="FRED_API_KEY"
+            )
+
+            model_config = SettingsConfigDict(
+                # Don't load from .env file
+                env_file_encoding="utf-8",
+                populate_by_name=True,
+                case_sensitive=False,
+                extra="ignore"
+            )
+
+        _settings = SettingsNoEnv()
+    else:
+        _settings = Settings()
+
     return _settings
 
 
