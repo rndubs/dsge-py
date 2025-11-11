@@ -123,7 +123,6 @@ def test_simple_nk_simulation() -> None:
     assert np.max(np.abs(states)) < 10.0, "Simulation should not explode"
 
 
-
 def test_simple_nk_impulse_responses() -> None:
     """Test impulse response functions."""
     model = create_simple_nk_model()
@@ -168,7 +167,6 @@ def test_simple_nk_impulse_responses() -> None:
     assert np.max(np.abs(irf[-5:, :])) < np.max(np.abs(irf[:5, :])), "IRF should decay over time"
 
 
-
 if __name__ == "__main__":
     # Run tests
     test_simple_nk_creation()
@@ -182,4 +180,3 @@ if __name__ == "__main__":
     test_simple_nk_simulation()
 
     test_simple_nk_impulse_responses()
-

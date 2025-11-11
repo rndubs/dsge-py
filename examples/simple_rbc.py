@@ -260,10 +260,8 @@ def main() -> None:
         model.spec.n_states,
     )
 
-
     if not solution.is_stable:
         return
-
 
     # Simulate data
     from dsge.solvers.linear import simulate
@@ -276,7 +274,6 @@ def main() -> None:
 
     T_sim = 200
     _states, obs = simulate(solution, T_sim, random_seed=42)
-
 
     # Plot simulated data
     _fig, axes = plt.subplots(2, 1, figsize=(10, 6))
@@ -309,7 +306,6 @@ def main() -> None:
             verbose=False,
         )
 
-
         # Compute posterior means
         posterior_mean = np.average(results.particles, weights=results.weights, axis=0)
         free_params = list(model.parameters.get_free_params().keys())
@@ -320,7 +316,6 @@ def main() -> None:
 
     except Exception:
         pass
-
 
 
 if __name__ == "__main__":

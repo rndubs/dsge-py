@@ -122,10 +122,8 @@ def main() -> None:
         model.spec.n_states,
     )
 
-
     if not solution.is_stable:
         return
-
 
     # Simulate data
     from dsge.solvers.linear import simulate
@@ -137,7 +135,6 @@ def main() -> None:
 
     T_sim = 300
     _states, obs = simulate(solution, T_sim, random_seed=42)
-
 
     # Plot
     _fig, ax = plt.subplots(figsize=(10, 4))
@@ -161,7 +158,6 @@ def main() -> None:
     try:
         results = estimate_dsge(model, test_data, n_particles=200, n_mh_steps=1, verbose=True)
 
-
         # Posterior statistics
         posterior_mean = np.average(results.particles, weights=results.weights, axis=0)
         posterior_std = np.sqrt(
@@ -178,7 +174,6 @@ def main() -> None:
         import traceback
 
         traceback.print_exc()
-
 
 
 if __name__ == "__main__":

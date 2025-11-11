@@ -1,6 +1,5 @@
 """Likelihood evaluation for DSGE models."""
 
-
 import numpy as np
 
 from ..filters.kalman import kalman_filter

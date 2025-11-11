@@ -198,7 +198,6 @@ def create_validation_report(solution, model, info, save_dir="validation"):
     )
     plt.close(fig_sim)
 
-
     return irfs, states
 
 
@@ -216,10 +215,8 @@ def main():
         n_states=model.spec.n_states,
     )
 
-
     # Create validation report
     irfs, states = create_validation_report(solution, model, info)
-
 
     return solution, model, info, irfs, states
 

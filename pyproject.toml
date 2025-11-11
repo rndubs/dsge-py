@@ -68,6 +68,15 @@ filterwarnings = [
 target-version = "py311"
 # Line length for formatting
 line-length = 100
+# Exclude example, validation, data scripts, models, and tests from strict checks
+exclude = [
+    "examples/**",
+    "validation/**",
+    "data/**",
+    "docs/conf.py",
+    "tests/**",
+    "models/**",
+]
 
 [tool.ruff.format]
 # Use double quotes for strings
@@ -179,6 +188,22 @@ ignore = [
     # Research code conventions
     "ERA001",  # Commented code might be intentional for research/experimentation
     "INP001",  # Scripts and examples don't need __init__.py
+    # Acceptable code patterns for DSGE library
+    "PLW0603",  # Global statements used for singleton pattern
+    "PLC0415",  # Conditional imports for optional dependencies
+    "ARG001",  # Unused function arguments in interface methods
+    "ARG002",  # Unused method arguments in interface/abstract methods
+    "PLR0911",  # Too many return statements - acceptable for transformation functions
+    "PLR0912",  # Too many branches - acceptable for data loading with many options
+    "PLR0915",  # Too many statements - acceptable for complex mathematical functions
+    "PLR2004",  # Magic values - numerical tolerances are standard
+    "C901",  # Complex functions - acceptable for mathematical/data loading functions
+    "ANN001",  # Missing type annotations for some arguments
+    "ANN202",  # Missing return type for private/abstract methods
+    "ANN204",  # Missing return type for __post_init__ (dataclasses)
+    "D107",  # Missing docstring in __init__
+    "B904",  # Exception handling without 'from' clause
+    "E722",  # Bare except - used for fallback in numerical methods
 ]
 
 [tool.ruff.lint.pydocstyle]

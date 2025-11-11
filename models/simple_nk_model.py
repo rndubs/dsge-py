@@ -9,7 +9,6 @@ A basic New Keynesian model with:
 This serves as a simpler example before the full NYFed model.
 """
 
-
 import numpy as np
 
 from src.dsge.models.base import DSGEModel, ModelSpecification

@@ -12,7 +12,6 @@ Based on Dynare implementation by Johannes Pfeifer:
 https://github.com/JohannesPfeifer/DSGE_mod/blob/master/Smets_Wouters_2007/
 """
 
-
 import numpy as np
 
 from dsge.models.base import DSGEModel, ModelSpecification
@@ -659,7 +658,6 @@ class SmetsWouters2007(DSGEModel):
             "cwhlc": cwhlc,
             "conster": conster,
         }
-
 
     def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """

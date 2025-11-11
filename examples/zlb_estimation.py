@@ -171,7 +171,6 @@ def main() -> None:
     T = 100
     true_data, true_regimes = simulate_zlb_data(T=T, seed=42)
 
-
     # Plot simulated data
     fig, axes = plt.subplots(2, 1, figsize=(10, 6))
 
@@ -220,7 +219,6 @@ def main() -> None:
     )
     solution_zlb.Q = model_zlb.shock_covariance()
 
-
     # Create constraint
     zlb_constraint = create_zlb_constraint(variable_index=0, bound=0.0)
 
@@ -239,7 +237,6 @@ def main() -> None:
         H=H,
         max_iter=20,
     )
-
 
     # Compare inferred vs true regimes
     np.sum(filter_results.regime_sequence == true_regimes) / T
@@ -311,7 +308,6 @@ def main() -> None:
 
     plt.tight_layout()
     plt.savefig("examples/zlb_estimation_filtering.png", dpi=150)
-
 
 
 if __name__ == "__main__":

@@ -218,10 +218,8 @@ def main() -> None:
         model_M2.spec.n_states,
     )
 
-
     if not (solution_M1.is_stable and solution_M2.is_stable):
         return
-
 
     # Create ZLB constraint (interest rate is index 2)
     zlb_constraint = create_zlb_constraint(variable_index=2, bound=0.0)
@@ -238,7 +236,6 @@ def main() -> None:
 
     # Solve OccBin model
     occbin_solution = occbin_solver.solve(initial_state, shocks, T)
-
 
     # Count ZLB periods
     np.sum(occbin_solution.regime_sequence == 1)
@@ -267,7 +264,6 @@ def main() -> None:
 
     plt.tight_layout()
     plt.savefig("examples/zlb_simulation.png", dpi=150)
-
 
 
 if __name__ == "__main__":

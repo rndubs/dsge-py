@@ -185,7 +185,9 @@ class TestTransformations:
 
         pd.testing.assert_series_equal(result, expected)
 
-    def test_real_transformation_without_deflator_raises_error(self, sample_quarterly_series) -> None:
+    def test_real_transformation_without_deflator_raises_error(
+        self, sample_quarterly_series
+    ) -> None:
         """Test that real transformation without deflator raises error."""
         with pytest.raises(ValueError, match="Deflator required"):
             transform_series(sample_quarterly_series, "real_quarterly_growth_rate")

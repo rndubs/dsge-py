@@ -21,7 +21,6 @@ def analyze_eigenvalues(solution_info):
     """Analyze eigenvalue properties."""
     eigvals = solution_info["eigenvalues"]
 
-
     # Count eigenvalues by type
     abs_eigvals = np.abs(eigvals)
 
@@ -29,7 +28,6 @@ def analyze_eigenvalues(solution_info):
     np.sum((abs_eigvals >= 1e-10) & (abs_eigvals < 1.0))
     np.sum((abs_eigvals >= 0.99) & (abs_eigvals <= 1.01))
     np.sum(abs_eigvals > 1.01)
-
 
     # Largest eigenvalues
     sorted_idx = np.argsort(abs_eigvals)[::-1]
@@ -54,16 +52,13 @@ def analyze_solution_matrices(solution, model) -> None:
     R_matrix = solution.R
     C_vector = solution.C
 
-
     # Check sparsity
     np.sum(np.abs(T_matrix) > 1e-10)
     np.sum(np.abs(R_matrix) > 1e-10)
 
-
     # Check matrix norms
     np.linalg.norm(T_matrix, ord="fro")
     np.linalg.norm(R_matrix, ord="fro")
-
 
     # Check C vector
     np.sum(np.abs(C_vector) > 1e-10)
@@ -133,7 +128,6 @@ def run_simulation(solution, model, T=200, n_sims=1, shock_std=0.01):
     # Compute statistics
     states = np.mean(all_sims, axis=0)  # Average across simulations
 
-
     # Statistics for key variables
     state_idx = {name: i for i, name in enumerate(model.spec.state_names)}
 
@@ -155,7 +149,6 @@ def main():
     # Create model
     model = create_nyfed_model()
 
-
     # Get system matrices
     mats = model.system_matrices()
 
@@ -167,7 +160,6 @@ def main():
         Pi=mats["Pi"],
         n_states=model.spec.n_states,
     )
-
 
     # Analyze eigenvalues
     eigvals = analyze_eigenvalues(info)
@@ -185,13 +177,10 @@ def main():
 
     max_eigval = np.max(np.abs(eigvals))
 
-
     if max_eigval <= 1.01:
         pass
     else:
         pass
-
-
 
     return solution, model, irfs, states
 
