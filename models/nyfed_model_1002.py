@@ -4,11 +4,61 @@ FRBNY DSGE Model 1002 - Framework Implementation.
 Translation of the New York Federal Reserve DSGE model (version 1002)
 to the dsge-py framework interface.
 
-Based on: FRBNY DSGE Model Documentation (March 3, 2021)
+References
+----------
+Official Documentation:
+    FRBNY DSGE Model Documentation (March 3, 2021)
+    https://github.com/FRBNY-DSGE/DSGE.jl/blob/main/docs/DSGE_Model_Documentation_1002.pdf
 
-This implementation follows the same pattern as simple_nk_model.py,
-with all equilibrium conditions expressed in matrix form for the
-Sims (2002) solver.
+Reference Implementation (Julia):
+    FRBNY-DSGE/DSGE.jl - Model 1002
+    https://github.com/FRBNY-DSGE/DSGE.jl/tree/main/src/models/representative/m1002
+
+    Key files for verification:
+    - m1002.jl: Model definition and parameter specifications
+    - eqcond.jl: Equilibrium conditions (canonical form matrices)
+    - measurement.jl: Observable equations
+
+    Parameters verified against DSGE.jl v1.1.6+ (2021-2024).
+
+Foundational Papers:
+    Del Negro, M., Giannoni, M. P., & Schorfheide, F. (2015).
+    "Inflation in the Great Recession and New Keynesian Models."
+    American Economic Journal: Macroeconomics, 7(1), 168-196.
+
+    Del Negro, M., Hasegawa, R. B., & Schorfheide, F. (2016).
+    "Dynamic Prediction Pools: An Investigation of Financial Frictions
+    and Forecasting Performance." Journal of Econometrics, 192(2), 391-405.
+
+Financial Accelerator Mechanism:
+    Bernanke, B. S., Gertler, M., & Gilchrist, S. (1999).
+    "The Financial Accelerator in a Quantitative Business Cycle Framework."
+    Handbook of Macroeconomics, Vol. 1C, 1341-1393.
+
+Parameter Values Source:
+    Parameter values in this implementation are PRIOR MEANS from the FRBNY specification,
+    NOT posterior estimates. This is appropriate for:
+    1. Estimation frameworks (start from priors, obtain posteriors via SMC/MCMC)
+    2. Forecast initialization before re-estimation
+
+    Prior distributions match those specified in DSGE.jl Model 1002 (verified 2025-11-11).
+    For posterior estimates, run the estimation pipeline on FRED data or use FRBNY's
+    published vintage estimates.
+
+    See ECONOMIC_MODELS_REVIEW.md for detailed parameter verification.
+
+Data Requirements:
+    13 U.S. macroeconomic quarterly time series (1959:Q3 onward):
+    - Real GDP growth, GDI growth, Consumption growth, Investment growth
+    - Real wage growth, Hours worked
+    - Core PCE inflation, GDP deflator inflation
+    - Federal Funds Rate, 10-year Treasury yield
+    - Long-run inflation expectations, Credit spread (BAA-10Y)
+    - TFP growth (computed)
+
+Solution Method:
+    Sims (2002) canonical form with QZ decomposition (Blanchard-Kahn conditions).
+    All equilibrium conditions expressed in matrix form (Γ₀, Γ₁, Ψ, Π).
 """
 
 

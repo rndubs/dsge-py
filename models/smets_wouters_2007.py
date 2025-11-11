@@ -4,12 +4,33 @@ Smets-Wouters (2007) DSGE Model.
 Translation of the Smets-Wouters (2007) "Shocks and Frictions in US Business Cycles"
 model to the dsge-py framework.
 
-Reference:
-Smets, F., & Wouters, R. (2007). Shocks and frictions in US business cycles:
-A Bayesian DSGE approach. American Economic Review, 97(3), 586-606.
+References
+----------
+Primary Paper:
+    Smets, F., & Wouters, R. (2007). "Shocks and frictions in US business cycles:
+    A Bayesian DSGE approach." American Economic Review, 97(3), 586-606.
+    https://www.aeaweb.org/articles?id=10.1257/aer.97.3.586
 
-Based on Dynare implementation by Johannes Pfeifer:
-https://github.com/JohannesPfeifer/DSGE_mod/blob/master/Smets_Wouters_2007/
+Reference Implementation:
+    Johannes Pfeifer's Dynare replication (verified against published posterior estimates):
+    https://github.com/JohannesPfeifer/DSGE_mod/blob/master/Smets_Wouters_2007/Smets_Wouters_2007_45.mod
+
+Parameter Values Source:
+    Published posterior estimates from Table 1A and 1B of Smets & Wouters (2007).
+    See ECONOMIC_MODELS_REVIEW.md for detailed parameter verification against literature.
+
+    IMPORTANT: Current implementation uses a mix of prior means and posterior estimates.
+    For research use, parameters should match published posteriors. See review document
+    for specific discrepancies and corrections needed.
+
+Data:
+    US quarterly data (1966:Q1-2004:Q4) for 7 observables:
+    - GDP growth, Consumption growth, Investment growth, Wage growth
+    - Inflation, Federal funds rate, Hours worked
+
+Estimation Method:
+    Bayesian estimation using Random Walk Metropolis-Hastings algorithm
+    with 100,000 draws (50,000 burn-in).
 """
 
 
