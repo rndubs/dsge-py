@@ -27,6 +27,13 @@ models/nyfed
 
 ```{toctree}
 :maxdepth: 2
+:caption: Developer Documentation
+
+implementation-notes
+```
+
+```{toctree}
+:maxdepth: 2
 :caption: API Reference
 
 api

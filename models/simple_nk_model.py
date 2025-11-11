@@ -1,12 +1,44 @@
 """
 Simple 3-Equation New Keynesian Model.
 
-A basic New Keynesian model with:
-- IS curve (consumption Euler equation)
-- Phillips curve
-- Taylor rule
+A canonical 3-equation New Keynesian model for framework validation and teaching.
 
-This serves as a simpler example before the full NYFed model.
+Model Structure:
+- IS curve (consumption Euler equation)
+- New Keynesian Phillips curve
+- Taylor rule (monetary policy)
+
+References
+----------
+Canonical NK Model Sources:
+    Galí, J. (2015). "Monetary Policy, Inflation, and the Business Cycle:
+    An Introduction to the New Keynesian Framework and Its Applications" (2nd ed.).
+    Princeton University Press. Chapter 3.
+
+    Woodford, M. (2003). "Interest and Prices: Foundations of a Theory of
+    Monetary Policy." Princeton University Press. Chapter 4.
+
+    Walsh, C. E. (2017). "Monetary Theory and Policy" (4th ed.).
+    MIT Press. Chapter 8.
+
+Parameter Calibration:
+    Standard textbook values for quarterly U.S. data:
+    - sigma = 1.5 (moderate risk aversion, inverse IES)
+    - beta = 0.99 (quarterly discount factor → 4% annual rate)
+    - kappa = 0.1 (slope of Phillips curve, implies moderate price stickiness)
+    - phi_pi = 1.5 (Taylor principle satisfied)
+    - phi_y = 0.5 (standard output gap response)
+    - rho_r = 0.75 (interest rate smoothing)
+
+    These values are typical calibrations from the literature, not estimated.
+
+Purpose:
+    This model serves as a validation case for the framework implementation.
+    It provides a simple, well-understood benchmark for testing:
+    - Solution methods (Blanchard-Kahn)
+    - Kalman filtering
+    - SMC Bayesian estimation
+    - Impulse response functions
 """
 
 
