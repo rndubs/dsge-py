@@ -1,9 +1,17 @@
 # DSGE-PY
 
-A Python framework for Dynamic Stochastic General Equilibrium (DSGE) models with support for occasionally binding constraints.
-
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/rndubs/dsge-py/actions/workflows/ci.yml/badge.svg)](https://github.com/rndubs/dsge-py/actions/workflows/ci.yml)
+[![Documentation](https://github.com/rndubs/dsge-py/actions/workflows/docs.yml/badge.svg)](https://github.com/rndubs/dsge-py/actions/workflows/docs.yml)
+
+> **⚠️ PROOF OF CONCEPT DISCLAIMER**
+>
+> This project is a proof of concept that was entirely written by Claude (Anthropic's AI assistant). It is intended solely for research, demonstration, and educational purposes.
+>
+> **This software should NOT be used to make any policy decisions, economic forecasts, or real-world financial decisions.** While the implementation follows established economic modeling techniques, it has not undergone the rigorous validation and peer review required for use in actual economic policy or analysis.
+
+A Python framework for Dynamic Stochastic General Equilibrium (DSGE) models with support for occasionally binding constraints.
 
 ## Features
 
