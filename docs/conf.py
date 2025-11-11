@@ -58,7 +58,7 @@ html_theme_options = {
 }
 
 # -- Options for LaTeX output ------------------------------------------------
-latex_engine = 'pdflatex'
+latex_engine = 'xelatex'
 latex_elements = {
     'papersize': 'letterpaper',
     'pointsize': '10pt',
