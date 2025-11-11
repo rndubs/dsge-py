@@ -202,14 +202,10 @@ def estimate_nyfed_model(
 
     # Print results
     if verbose:
-
-
-
         for i, param_name in enumerate(params_to_estimate):
             model.parameters[param_name]
             posterior_mean[i]
             posterior_std[i]
-
 
     # Save results
     Path(save_dir).mkdir(parents=True, exist_ok=True)

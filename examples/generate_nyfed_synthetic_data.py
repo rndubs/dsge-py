@@ -48,7 +48,6 @@ def generate_synthetic_data(
     # Create and solve model
     model = create_nyfed_model()
 
-
     # Solve model
     mats = model.system_matrices()
 
@@ -60,7 +59,6 @@ def generate_synthetic_data(
         n_states=model.spec.n_states,
     )
 
-
     # Simulate states
     n_states = model.spec.n_states
     n_shocks = model.spec.n_shocks
@@ -71,12 +69,10 @@ def generate_synthetic_data(
     for t in range(1, T):
         states[t] = solution.C + solution.T @ states[t - 1] + solution.R @ shocks[t]
 
-
     # Generate observables
     Z, D = model.measurement_equation()
 
     observables = states @ Z.T + D
-
 
     # Create DataFrame
     start_date = "1960-01-01"
@@ -90,7 +86,6 @@ def generate_synthetic_data(
     if save_path:
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
         data.to_csv(save_path)
-
 
     return data
 

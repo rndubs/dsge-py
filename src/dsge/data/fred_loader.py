@@ -43,9 +43,7 @@ def download_fred_series(
         from fredapi import Fred
     except ImportError:
         msg = "fredapi package required for FRED data download. Install with: uv add fredapi"
-        raise ImportError(
-            msg
-        )
+        raise ImportError(msg)
 
     # Initialize FRED API
     if api_key is None:
@@ -58,7 +56,8 @@ def download_fred_series(
                 "No FRED API key provided. Set FRED_API_KEY in .env file or "
                 "environment variable, or pass api_key parameter. "
                 "You can get a free API key at "
-                "https://fred.stlouisfed.org/docs/api/api_key.html", stacklevel=2
+                "https://fred.stlouisfed.org/docs/api/api_key.html",
+                stacklevel=2,
             )
             # Return empty series if no API key
             return pd.Series(dtype=float)
@@ -175,14 +174,21 @@ def compute_real_series(nominal: pd.Series, deflator: pd.Series) -> pd.Series:
         nominal_period.index = nominal.index.to_period("Q")
         deflator_period.index = deflator.index.to_period("Q")
 
-        # Align by period (this will match 2019Q1 regardless of whether it's 2019-01-01 or 2019-03-31)
+        # Align by period (this will match 2019Q1 regardless of date format)
         aligned_nominal, aligned_deflator = nominal_period.align(deflator_period, join="inner")
 
         if len(aligned_nominal) == 0:
+            nom_range = (
+                nominal_period.index[[0, -1]].tolist() if len(nominal_period) > 0 else "empty"
+            )
+            def_range = (
+                deflator_period.index[[0, -1]].tolist() if len(deflator_period) > 0 else "empty"
+            )
             warnings.warn(
                 f"No overlapping quarters between nominal series and deflator. "
-                f"Nominal quarters: {nominal_period.index[[0, -1]].tolist() if len(nominal_period) > 0 else 'empty'}, "
-                f"Deflator quarters: {deflator_period.index[[0, -1]].tolist() if len(deflator_period) > 0 else 'empty'}", stacklevel=2
+                f"Nominal quarters: {nom_range}, "
+                f"Deflator quarters: {def_range}",
+                stacklevel=2,
             )
             return pd.Series(dtype=float)
 
@@ -234,7 +240,9 @@ def transform_series(
             msg = "Deflator required for real_quarterly_growth_rate transformation"
             raise ValueError(msg)
         if deflator.empty:
-            warnings.warn("Deflator is empty, returning empty series for real transformation", stacklevel=2)
+            warnings.warn(
+                "Deflator is empty, returning empty series for real transformation", stacklevel=2
+            )
             return pd.Series(dtype=float)
         real_series = compute_real_series(series, deflator)
         return compute_growth_rate(real_series, annualize=True)
@@ -294,11 +302,13 @@ def load_nyfed_data(
     sys.path.insert(0, str(data_dir))
 
     try:
-        from fred_series_mapping import FRED_SERIES_MAP, get_series_spec  # type: ignore[import-untyped]
+        from fred_series_mapping import (  # type: ignore[import-untyped]
+            FRED_SERIES_MAP,
+            get_series_spec,
+        )
     except ImportError:
         msg = "Could not import fred_series_mapping. Check data/ directory."
         raise ImportError(msg)
-
 
     # Download raw series
     raw_data = {}
@@ -309,13 +319,11 @@ def load_nyfed_data(
 
     # Download all series
     for _i, (obs_name, spec) in enumerate(FRED_SERIES_MAP.items(), 1):
-
         series = download_fred_series(spec.fred_code, start_date, end_date, api_key)
 
         if series.empty:
             raw_data[obs_name] = pd.Series(dtype=float)
             continue
-
 
         # Convert to quarterly if needed
         freq = pd.infer_freq(cast("DatetimeIndex", series.index))
@@ -376,7 +384,6 @@ def load_nyfed_data(
     # Align to common index (intersection of all series with data)
     df = df.dropna()
 
-
     # Print basic statistics
     if len(df) > 0:
         pass
@@ -417,8 +424,6 @@ def validate_data(df: pd.DataFrame, verbose: bool = True) -> dict[str, Any]:
     }
 
     if verbose:
-
-
         for _var, count in cast("dict[str, Any]", results["missing_count"]).items():
             if count > 0:
                 pass

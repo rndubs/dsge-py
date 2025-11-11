@@ -60,7 +60,6 @@ def main() -> None:
     if api_key is None:
         sys.exit(1)
 
-
     # Download data
     try:
         data = load_nyfed_data(
@@ -70,7 +69,6 @@ def main() -> None:
         # Validate if requested
         if args.validate:
             validate_data(data, verbose=True)
-
 
     except Exception:
         import traceback

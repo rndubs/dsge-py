@@ -261,9 +261,7 @@ def conditional_forecast(
 
     if len(valid_paths) == 0:
         msg = "No paths satisfy the conditions. Try relaxing constraints or increasing tolerance."
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
 
     # Convert to array
     valid_paths = np.array(valid_paths[:n_paths])

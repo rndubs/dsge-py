@@ -174,7 +174,6 @@ def main() -> None:
     T = 80
     true_data, true_regimes, true_phi, true_sigma = simulate_zlb_data(T=T, seed=42)
 
-
     # Plot simulated data
     fig, axes = plt.subplots(2, 1, figsize=(10, 6))
 
@@ -222,7 +221,6 @@ def main() -> None:
         verbose=True,
     )
 
-
     # Analyze posterior
 
     # Compute posterior statistics
@@ -233,7 +231,6 @@ def main() -> None:
 
     phi_mean, sigma_mean = posterior_mean
     _phi_std, _sigma_std = posterior_std
-
 
     # Plot posterior distributions
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -318,7 +315,6 @@ def main() -> None:
 
     plt.tight_layout()
     plt.savefig("examples/zlb_full_estimation_joint.png", dpi=150)
-
 
 
 if __name__ == "__main__":

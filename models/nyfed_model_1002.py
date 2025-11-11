@@ -61,7 +61,6 @@ Solution Method:
     All equilibrium conditions expressed in matrix form (Γ₀, Γ₁, Ψ, Π).
 """
 
-
 import numpy as np
 
 from dsge.models.base import DSGEModel, ModelSpecification
@@ -836,7 +835,6 @@ class NYFedModel1002(DSGEModel):
             "leverage_star": leverage_star,
             "w_L_c_star": w_L_c_star,
         }
-
 
     def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """

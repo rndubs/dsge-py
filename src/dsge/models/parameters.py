@@ -70,9 +70,7 @@ class Parameter:
         """Validate parameter."""
         if self.value < self.bounds[0] or self.value > self.bounds[1]:
             msg = f"Parameter {self.name} value {self.value} outside bounds {self.bounds}"
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
 
 class ParameterSet:

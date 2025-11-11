@@ -100,7 +100,6 @@ def test_nyfed_solution() -> None:
         eigvals = np.linalg.eigvals(solution.T)
         np.max(np.abs(eigvals))
 
-
         # For complex models, some eigenvalues may be close to or on unit circle
         # Check that not all eigenvalues are explosive
         np.sum(np.abs(eigvals) > 1.01)
@@ -139,7 +138,6 @@ def test_nyfed_simulation() -> None:
 
         # Check that simulation doesn't explode
         assert np.all(np.isfinite(states)), "Simulation should remain finite"
-
 
         # Print stats for key variables
         {name: i for i, name in enumerate(model.spec.state_names)}
@@ -185,7 +183,6 @@ def test_nyfed_impulse_responses() -> None:
         # Check IRF properties
         idx = {name: i for i, name in enumerate(model.spec.state_names)}
 
-
         if irf[0, idx["R"]] > 0:  # If rate increases
             pass
 
@@ -212,4 +209,3 @@ if __name__ == "__main__":
     test_nyfed_simulation()
 
     test_nyfed_impulse_responses()
-

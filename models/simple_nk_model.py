@@ -41,7 +41,6 @@ Purpose:
     - Impulse response functions
 """
 
-
 import numpy as np
 
 from src.dsge.models.base import DSGEModel, ModelSpecification

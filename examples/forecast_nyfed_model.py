@@ -220,7 +220,6 @@ def forecast_nyfed_model(
     if verbose:
         pass
 
-
     return {
         "forecast": forecast_result,
         "data": data,

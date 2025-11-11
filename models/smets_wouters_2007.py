@@ -33,7 +33,6 @@ Estimation Method:
     with 100,000 draws (50,000 burn-in).
 """
 
-
 import numpy as np
 
 from dsge.models.base import DSGEModel, ModelSpecification
@@ -680,7 +679,6 @@ class SmetsWouters2007(DSGEModel):
             "cwhlc": cwhlc,
             "conster": conster,
         }
-
 
     def system_matrices(self, params: np.ndarray | None = None) -> dict[str, np.ndarray]:
         """
