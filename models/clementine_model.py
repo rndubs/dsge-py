@@ -71,12 +71,15 @@ The CLEMENTINE model is a medium-scale DSGE model that combines:
 7. Stochastic trend productivity growth
 
 State Variables:
-- 40 total states including:
+- 37 total states including:
   * 13 endogenous variables (output, consumption, investment, etc.)
   * 8 labor market variables (employment, unemployment, vacancies, etc.)
   * 6 lags for dynamics
-  * 7 structural shocks
+  * 4 shock state variables (preference, investment, price markup, wage markup)
   * 6 derived/auxiliary variables
+
+  Note: z_trend, z_stat, and g are persistent AR(1) state variables (counted in endogenous),
+        not separate shock states. Total structural innovations: 7.
 
 Observable Variables:
 - GDP growth
@@ -132,8 +135,8 @@ class ClementineModel(DSGEModel):
     - Financial frictions (credit spreads)
     - Standard New Keynesian core
 
-    State vector dimension: 40
-    Number of shocks: 7
+    State vector dimension: 37
+    Number of structural shocks: 7
     Number of observables: 10
     """
 
@@ -670,7 +673,7 @@ class ClementineModel(DSGEModel):
         System: Γ₀ * s_t = Γ₁ * s_{t-1} + Ψ * ε_t + Π * η_t
 
         where:
-        - s_t: state vector (40 x 1)
+        - s_t: state vector (37 x 1)
         - ε_t: structural shocks (7 x 1)
         - η_t: expectational errors (n_eta x 1)
 

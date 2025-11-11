@@ -50,14 +50,14 @@ The CLEMENTINE (CLeveland Equilibrium ModEl iNcluding Trend INformation and the 
 ### Dimensions
 
 - **Parameters**: 41 total (structural + calibrated + shock parameters)
-- **State Variables**: 40 total
-  - 13 core endogenous variables
+- **State Variables**: 37 total
+  - 13 core endogenous variables (including z_trend, z_stat, g as persistent AR(1) states)
   - 8 labor market variables
   - 6 lags
-  - 7 structural shocks
+  - 4 shock state variables (eps_b, eps_i, eps_p, eps_w)
   - 6 auxiliary/derived variables
 - **Observables**: 10 macroeconomic time series
-- **Shocks**: 7 structural shocks
+- **Structural Innovations**: 7 total (shocks to z_trend, z_stat, b, i, g, p, w)
 
 ### Core Endogenous Variables
 
@@ -92,15 +92,19 @@ The CLEMENTINE (CLeveland Equilibrium ModEl iNcluding Trend INformation and the 
 
 ### Structural Shocks
 
-| Shock | Description | Persistence (Prior Mean) |
-|-------|-------------|--------------------------|
-| `eps_z_trend` | Trend technology | 0.95 |
-| `eps_z_stat` | Stationary technology | 0.80 |
-| `eps_b` | Preference / risk premium | 0.50 |
-| `eps_i` | Investment efficiency / MEI | 0.50 |
-| `eps_g` | Government spending | 0.50 |
-| `eps_p` | Price markup | 0.50 |
-| `eps_w` | Wage markup | 0.50 |
+The model has 7 structural innovations driving 7 shock processes:
+
+| Innovation | Drives State | Description | Persistence (ρ) |
+|------------|--------------|-------------|-----------------|
+| `shock_z_trend` | `z_trend` | Trend technology (persistent AR(1) state) | 0.95 |
+| `shock_z_stat` | `z_stat` | Stationary technology (persistent AR(1) state) | 0.80 |
+| `shock_b` | `eps_b` | Preference / risk premium (AR(1) shock state) | 0.50 |
+| `shock_i` | `eps_i` | Investment efficiency / MEI (AR(1) shock state) | 0.50 |
+| `shock_g` | `g` | Government spending (persistent AR(1) state) | 0.50 |
+| `shock_p` | `eps_p` | Price markup (AR(1) shock state) | 0.50 |
+| `shock_w` | `eps_w` | Wage markup (AR(1) shock state) | 0.50 |
+
+**Note**: z_trend, z_stat, and g are counted as endogenous state variables (not separate shock states), while eps_b, eps_i, eps_p, and eps_w are explicit shock state variables.
 
 ### Observables
 
@@ -349,8 +353,8 @@ zlb_constraint = Constraint(
 solver = OccBinSolver(solution_M1, solution_M2, zlb_constraint)
 
 # Simulate large negative shock
-initial_state = np.zeros(40)
-shocks = np.zeros((50, 7))
+initial_state = np.zeros(37)  # 37 states
+shocks = np.zeros((50, 7))    # 7 structural innovations
 shocks[0, 2] = -3.0  # Large negative preference shock
 
 result = solver.solve(initial_state, shocks, T=50)

@@ -426,7 +426,7 @@ Canonical medium-scale DSGE model:
 ### Linear Models
 
 - AR(1) solution: < 0.01s
-- Medium-scale model (40 states): < 0.1s
+- Medium-scale model (37 states): < 0.1s
 - Kalman filter (100 periods): < 0.01s
 
 ### Estimation
