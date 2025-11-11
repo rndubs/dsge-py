@@ -199,7 +199,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="csigma",
-                value=1.5,
+                value=1.2312,
                 prior=make_prior("normal", 1.50, 0.375),
                 fixed=False,
                 description="Risk aversion parameter",
@@ -209,7 +209,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="chabb",
-                value=0.6361,
+                value=0.7205,
                 prior=make_prior("beta", 0.70, 0.10),
                 fixed=False,
                 description="External habit degree",
@@ -219,7 +219,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="csigl",
-                value=1.9423,
+                value=2.8401,
                 prior=make_prior("normal", 2.00, 0.75),
                 fixed=False,
                 description="Inverse Frisch elasticity of labor supply",
@@ -240,7 +240,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="csadjcost",
-                value=6.0144,
+                value=6.3325,
                 prior=make_prior("normal", 4.00, 1.50),
                 fixed=False,
                 description="Investment adjustment cost",
@@ -261,7 +261,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="cprobp",
-                value=0.6,
+                value=0.7813,
                 prior=make_prior("beta", 0.50, 0.10),
                 fixed=False,
                 description="Calvo parameter for prices",
@@ -271,7 +271,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="cindp",
-                value=0.47,
+                value=0.3291,
                 prior=make_prior("beta", 0.50, 0.15),
                 fixed=False,
                 description="Indexation to past inflation (prices)",
@@ -281,7 +281,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="cprobw",
-                value=0.8087,
+                value=0.7937,
                 prior=make_prior("beta", 0.50, 0.10),
                 fixed=False,
                 description="Calvo parameter for wages",
@@ -291,7 +291,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="cindw",
-                value=0.3243,
+                value=0.4425,
                 prior=make_prior("beta", 0.50, 0.15),
                 fixed=False,
                 description="Indexation to past inflation (wages)",
@@ -302,7 +302,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crpi",
-                value=1.488,
+                value=1.7985,
                 prior=make_prior("normal", 1.50, 0.25),
                 fixed=False,
                 description="Taylor rule: response to inflation",
@@ -312,7 +312,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crr",
-                value=0.8762,
+                value=0.8258,
                 prior=make_prior("beta", 0.75, 0.10),
                 fixed=False,
                 description="Interest rate smoothing",
@@ -322,7 +322,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="cry",
-                value=0.0593,
+                value=0.0893,
                 prior=make_prior("normal", 0.125, 0.05),
                 fixed=False,
                 description="Taylor rule: response to output gap",
@@ -332,7 +332,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crdy",
-                value=0.2347,
+                value=0.2239,
                 prior=make_prior("normal", 0.125, 0.05),
                 fixed=False,
                 description="Taylor rule: response to output growth",
@@ -343,7 +343,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhoa",
-                value=0.9977,
+                value=0.9676,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) productivity shock persistence",
@@ -353,7 +353,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhob",
-                value=0.5799,
+                value=0.2703,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) risk premium shock persistence",
@@ -363,7 +363,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhog",
-                value=0.9957,
+                value=0.9930,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) government spending shock persistence",
@@ -373,7 +373,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhoqs",
-                value=0.7165,
+                value=0.5724,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) investment shock persistence",
@@ -383,7 +383,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhoms",
-                value=0.0,
+                value=0.3000,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) monetary policy shock persistence",
@@ -393,7 +393,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhopinf",
-                value=0.0,
+                value=0.8692,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) price markup shock persistence",
@@ -403,7 +403,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="crhow",
-                value=0.0,
+                value=0.9546,
                 prior=make_prior("beta", 0.50, 0.20),
                 fixed=False,
                 description="AR(1) wage markup shock persistence",
@@ -445,7 +445,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_ea",
-                value=0.45,
+                value=0.4618,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of productivity shock",
@@ -455,7 +455,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_eb",
-                value=0.24,
+                value=0.1819,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of risk premium shock",
@@ -465,7 +465,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_eg",
-                value=0.52,
+                value=0.6090,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of government spending shock",
@@ -475,7 +475,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_eqs",
-                value=0.45,
+                value=0.4602,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of investment shock",
@@ -485,7 +485,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_em",
-                value=0.24,
+                value=0.2397,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of monetary policy shock",
@@ -495,7 +495,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_epinf",
-                value=0.14,
+                value=0.1455,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of price markup shock",
@@ -505,7 +505,7 @@ class SmetsWouters2007(DSGEModel):
         self.parameters.add(
             Parameter(
                 name="sigma_ew",
-                value=0.24,
+                value=0.2089,
                 prior=make_prior("invgamma", 0.10, 2.0),
                 fixed=False,
                 description="Std dev of wage markup shock",
