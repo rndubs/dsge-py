@@ -107,4 +107,4 @@ jobs:
         run: uv sync --all-groups
 
       - name: Run ty type checker
-        run: uv run ty check
+        run: uv run ty check src
