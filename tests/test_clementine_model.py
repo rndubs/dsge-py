@@ -26,7 +26,7 @@ class TestClementineModelStructure:
         """Test that model dimensions are correct."""
         model = create_clementine_model()
 
-        assert model.spec.n_states == 40
+        assert model.spec.n_states == 37  # Consolidated shock representation
         assert model.spec.n_controls == 0
         assert model.spec.n_shocks == 7
         assert model.spec.n_observables == 10
@@ -83,9 +83,8 @@ class TestClementineModelParameters:
     def test_parameter_count(self):
         """Test that correct number of parameters are defined."""
         model = create_clementine_model()
-        # Should have ~41 parameters
-        assert len(model.parameters) >= 40
-        assert len(model.parameters) <= 45
+        # Should have 41 parameters
+        assert len(model.parameters) == 41
 
     def test_key_parameters_exist(self):
         """Test that key structural parameters exist."""
@@ -191,13 +190,13 @@ class TestClementineModelMatrices:
         # Pi might be zero if no expectational errors
 
     def test_gamma0_invertibility(self):
-        """Test that Gamma0 is invertible (or near-invertible)."""
+        """Test that Gamma0 is full rank."""
         model = create_clementine_model()
         mats = model.system_matrices()
 
-        # Check rank or condition number
+        # Check that Gamma0 is full rank
         rank = np.linalg.matrix_rank(mats["Gamma0"])
-        assert rank >= model.spec.n_states - 5  # Allow some slack
+        assert rank == model.spec.n_states, f"Gamma0 rank {rank} != {model.spec.n_states}"
 
     def test_shock_loading_matrix(self):
         """Test that Psi matrix loads shocks correctly."""
@@ -324,14 +323,8 @@ class TestClementineModelSolution:
             n_states=model.spec.n_states,
         )
 
-        # For a growth model, eigenvalues should be well-behaved
-        # Allow slightly above 1 for unit roots in growth
-        max_eig = np.max(np.abs(solution.eigenvalues))
-        assert max_eig < 1.05, f"Max eigenvalue {max_eig:.4f} too large"
-
-        # Should satisfy Blanchard-Kahn conditions approximately
-        # (may have near-unit root for growth)
-        assert solution.is_stable or max_eig < 1.02
+        # Model should be stable
+        assert solution.is_stable, "Solution should satisfy Blanchard-Kahn conditions"
 
     def test_policy_functions(self):
         """Test that policy functions are computed."""

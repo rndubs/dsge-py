@@ -149,18 +149,18 @@ class ClementineModel(DSGEModel):
         # Lags: y, c, i, k, n, R
         n_lags = 6
 
-        # Shocks: tech_trend, tech_stat, preference, inv_eff, govt, markup_p, markup_w, spread, policy
-        # Note: Using 7 core shocks (combining some for simplicity)
-        n_shocks = 7
+        # Shocks: preference, inv_eff, markup_p, markup_w (tech shocks in z_trend/z_stat, g is separate)
+        # Note: z_trend, z_stat, g are the persistent shock states themselves
+        n_shocks = 4
 
         # Derived: natural output, output gap, real rate, etc.
         n_derived = 6
 
         n_states = n_endo + n_labor + n_lags + n_shocks + n_derived
-        # n_states = 13 + 8 + 6 + 7 + 6 = 40
+        # n_states = 13 + 8 + 6 + 4 + 6 = 37
 
         n_controls = 0  # All variables as states
-        n_structural_shocks = 7
+        n_structural_shocks = 7  # 7 innovations (tech_trend, tech_stat, b, i, g, p, w)
         n_observables = 10
 
         # Define state names
@@ -198,12 +198,9 @@ class ClementineModel(DSGEModel):
             "n_lag",
             "R_lag",
 
-            # Structural shocks
-            "eps_z_trend",    # Trend technology shock
-            "eps_z_stat",     # Stationary technology shock
+            # Structural shocks (non-technology)
             "eps_b",          # Preference shock
             "eps_i",          # Investment efficiency shock
-            "eps_g",          # Government spending shock
             "eps_p",          # Price markup shock
             "eps_w",          # Wage markup shock
 
@@ -217,13 +214,13 @@ class ClementineModel(DSGEModel):
         ]
 
         shock_names = [
-            "shock_z_trend",
-            "shock_z_stat",
-            "shock_b",
-            "shock_i",
-            "shock_g",
-            "shock_p",
-            "shock_w",
+            "shock_z_trend",   # Innovation to trend technology
+            "shock_z_stat",    # Innovation to stationary technology
+            "shock_b",         # Innovation to preference
+            "shock_i",         # Innovation to investment efficiency
+            "shock_g",         # Innovation to government spending
+            "shock_p",         # Innovation to price markup
+            "shock_w",         # Innovation to wage markup
         ]
 
         observable_names = [
@@ -983,16 +980,22 @@ class ClementineModel(DSGEModel):
         # BLOCK 6: SHOCK PROCESSES
         # ====================================================================
 
-        # Trend technology shock
+        # Trend technology shock (persistent state variable)
         Gamma0[eq, idx["z_trend"]] = 1.0
         Gamma1[eq, idx["z_trend"]] = -rho_z_trend
         Psi[eq, shock_idx["shock_z_trend"]] = sigma_z_trend
         eq += 1
 
-        # Stationary technology shock
+        # Stationary technology shock (persistent state variable)
         Gamma0[eq, idx["z_stat"]] = 1.0
         Gamma1[eq, idx["z_stat"]] = -rho_z_stat
         Psi[eq, shock_idx["shock_z_stat"]] = sigma_z_stat
+        eq += 1
+
+        # Government spending shock (persistent state variable)
+        Gamma0[eq, idx["g"]] = 1.0
+        Gamma1[eq, idx["g"]] = -rho_g
+        Psi[eq, shock_idx["shock_g"]] = sigma_g
         eq += 1
 
         # Preference shock
@@ -1005,12 +1008,6 @@ class ClementineModel(DSGEModel):
         Gamma0[eq, idx["eps_i"]] = 1.0
         Gamma1[eq, idx["eps_i"]] = -rho_i
         Psi[eq, shock_idx["shock_i"]] = sigma_i
-        eq += 1
-
-        # Government spending shock
-        Gamma0[eq, idx["g"]] = 1.0
-        Gamma1[eq, idx["g"]] = -rho_g
-        Psi[eq, shock_idx["shock_g"]] = sigma_g
         eq += 1
 
         # Price markup shock
@@ -1163,11 +1160,12 @@ class ClementineModel(DSGEModel):
         Returns
         -------
         Q : array (n_shocks x n_shocks)
-            Covariance matrix of structural shocks
+            Covariance matrix of structural shocks (innovations)
         """
         p = self.parameters.to_dict() if params is None else params
 
         # Diagonal covariance (independent shocks)
+        # 7 innovations: tech_trend, tech_stat, b, i, g, p, w
         Q = np.diag([
             p["sigma_z_trend"] ** 2,
             p["sigma_z_stat"] ** 2,
